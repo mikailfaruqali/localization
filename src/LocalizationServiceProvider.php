@@ -20,18 +20,18 @@ class LocalizationServiceProvider extends ServiceProvider
 
     private function registerViews()
     {
-        $this->loadViewsFrom(__DIR__ . '/views', 'localization');
+        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'snawbar-localization');
     }
 
     private function publishAssets()
     {
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__ . '/../../resources/assets' => public_path('vendor/snawbar-localization'),
+                __DIR__ . '/../resources/assets' => public_path('vendor/snawbar-localization'),
             ], 'snawbar-localization-assets');
 
             $this->publishes([
-                __DIR__ . '/../../config/localization.php' => config_path('snawbar-localization.php'),
+                __DIR__ . '/../config/localization.php' => config_path('snawbar-localization.php'),
             ], 'snawbar-localization-config');
         }
     }

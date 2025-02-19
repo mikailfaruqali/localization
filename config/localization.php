@@ -17,6 +17,39 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Route Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Define the base route prefix for the localization package. This prefix
+    | will be used for all routes related to localization management.
+    | For example, if set to 'localization', the routes will be:
+    | - /localization/view (to view translations)
+    | - /localization/update (to update translations)
+    |
+    | You can customize this prefix to fit your application's routing structure.
+    |
+    */
+
+    'route' => 'localization',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Language File Path
+    |--------------------------------------------------------------------------
+    |
+    | Define the path where language files are stored. By default, this points
+    | to the application's `lang` directory. This is where the package will
+    | load language files from.
+    |
+    | You can customize this if your language files are stored in a different
+    | location.
+    |
+    */
+
+    'path' => lang_path(),
+
+    /*
+    |--------------------------------------------------------------------------
     | Excluded Files
     |--------------------------------------------------------------------------
     |
@@ -27,6 +60,9 @@ return [
     */
 
     'exclude' => [
-
+        'auth.php',
+        'validation.php',
+        'pagination.php',
+        'passwords.php',
     ],
 ];
