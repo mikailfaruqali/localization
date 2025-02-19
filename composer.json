@@ -1,0 +1,45 @@
+{
+    "name": "mikailfaruqali/localization",
+    "description": "A robust Laravel package that provides an intuitive interface for managing, comparing, and editing language translation files. Easily maintain your localization resources with line-by-line comparisons, a Bootstrap-driven UI, and seamless support for adding new translation keys.",
+    "keywords": [
+        "laravel",
+        "localization",
+        "translations",
+        "i18n",
+        "language"
+    ],
+    "homepage": "https://github.com/mikailfaruqali/localization",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Snawbar",
+            "email": "alanfaruq85@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.0",
+        "illuminate/contracts": "^10.0 || ^11.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.14",
+        "orchestra/testbench": "^9.0.0 || ^8.22.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Snawbar\\Localization\\": "src/"
+        },
+        "files": [
+            "src/Helpers/helpers.php"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Snawbar\\Localization\\LocalizationServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
