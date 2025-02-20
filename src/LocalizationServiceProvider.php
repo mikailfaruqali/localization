@@ -15,16 +15,12 @@ class LocalizationServiceProvider extends ServiceProvider
 
     private function registerRoutes()
     {
-        if (! $this->app->runningInConsole()) {
-            $this->loadRoutesFrom(__DIR__ . '/routes/web.php');
-        }
+        $this->loadRoutesFrom(__DIR__ . '/routes/web.php');
     }
 
     private function registerViews()
     {
-        if (! $this->app->runningInConsole()) {
-            $this->loadViewsFrom(__DIR__ . '/../resources/views', 'snawbar-localization');
-        }
+        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'snawbar-localization');
     }
 
     private function publishAssets()
