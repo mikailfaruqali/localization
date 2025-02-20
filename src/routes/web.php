@@ -3,8 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use Snawbar\Localization\Http\Controllers\LocalizationController;
 
-Route::prefix(config()->string('snawbar-localization.route'))
-    ->middleware(config()->array('snawbar-localization.middleware'))
+Route::prefix(config()->string('snawbar-localization.route', 'localization'))
+    ->middleware(config()->array('snawbar-localization.middleware', ['web']))
     ->controller(LocalizationController::class)
     ->name('snawbar.')
     ->group(function () {
