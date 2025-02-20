@@ -15,12 +15,13 @@
     <link rel="stylesheet" href="{{ asset('vendor/snawbar-localization/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ asset('vendor/snawbar-localization/css/select2.min.css') }}">
     <link rel="stylesheet" href="{{ asset('vendor/snawbar-localization/css/select2-bootstrap-5-theme.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/snawbar-localization/css/styles.css') }}">
 
     <!-- Page Title  -->
     <title>Snawbar Localization</title>
 </head>
 <body>
-    <nav class="navbar navbar-dark bg-dark">
+    <nav class="navbar navbar-dark bg-dark shadow">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="{{ route('snawbar.localization.view') }}">
                 <img src="{{ asset('vendor/snawbar-localization/images/snawbar.png') }}" width="50" height="50" class="d-inline-block align-text-top">
@@ -30,9 +31,12 @@
         </div>
     </nav>
 
-    <div class="container mt-4 mb-4">
+    <div class="container-fluid mt-4 mb-4">
         @yield('content')
     </div>
+
+    <!-- Toast -->
+    <div id="toast-container" class="position-fixed top-0 end-0 p-3"></div>
 
     <!-- JavaScript -->
     <script src="{{ asset('vendor/snawbar-localization/js/bootstrap.min.js') }}"></script>

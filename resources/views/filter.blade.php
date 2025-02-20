@@ -1,7 +1,7 @@
 @extends('snawbar-localization::layout')
 
 @section('content')
-<div class="card">
+<div class="card shadow">
     <div class="card-header">
         <h5 class="card-title">Filter</h5>
     </div>

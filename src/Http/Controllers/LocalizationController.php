@@ -5,7 +5,6 @@ namespace Snawbar\Localization\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 class LocalizationController
 {
@@ -40,11 +39,9 @@ class LocalizationController
     {
         $request->merge([
             'languages' => json_decode($request->languages),
-            'baseKeys' => json_decode($request->baseKeys),
         ]);
 
         $this->validateRequestLanguages($request);
-        $this->ensureKeysNotChange($request);
 
         foreach ($request->languages as $language) {
             File::put(
@@ -53,7 +50,9 @@ class LocalizationController
             );
         }
 
-        return to_route('snawbar.localization.view');
+        return response()->json([
+            'redirect' => route('snawbar.localization.view'),
+        ]);
     }
 
     private function getLanguages()
@@ -92,13 +91,6 @@ class LocalizationController
     private function validateRequestLanguages(Request $request)
     {
         return $request->validate(array_reduce($request->languages, fn ($rules, $lang) => $rules + [$lang . '.*' => 'required|string'], []));
-    }
-
-    private function ensureKeysNotChange(Request $request)
-    {
-        foreach ($request->languages as $language) {
-            throw_if(array_keys($request->get($language, [])) !== $request->baseKeys, ValidationException::withMessages(['keys' => 'The keys do not match the expected structure.']));
-        }
     }
 
     private function generatePhpFileContent(array $content): string
