@@ -59,13 +59,13 @@ class LocalizationController
     {
         return collect(File::directories(config()->string('snawbar-localization.path')))
             ->map(fn ($directory) => basename($directory))
-            ->reject(fn ($directory) => $directory === config('app.locale'))
+            ->reject(fn ($directory) => $directory === config()->string('snawbar-localization.base-locale'))
             ->toArray();
     }
 
     private function getFiles()
     {
-        return collect(File::files(sprintf('%s/%s', config()->string('snawbar-localization.path'), config('app.locale'))))
+        return collect(File::files(sprintf('%s/%s', config()->string('snawbar-localization.path'), config()->string('snawbar-localization.base-locale'))))
             ->reject(fn ($file) => in_array($file->getFilename(), config()->array('snawbar-localization.exclude')))
             ->map(fn ($file) => $file->getFilename())
             ->toArray();
@@ -78,13 +78,13 @@ class LocalizationController
 
     private function getBaseKeys($selectedLanguageContents)
     {
-        return array_keys($selectedLanguageContents->get(config('app.locale')));
+        return array_keys($selectedLanguageContents->get(config()->string('snawbar-localization.base-locale')));
     }
 
     private function mergeLanguages(Request $request)
     {
         $request->merge([
-            'languages' => array_merge([config('app.locale')], $request->get('languages', [])),
+            'languages' => array_merge([config()->string('snawbar-localization.base-locale')], $request->get('languages', [])),
         ]);
     }
 

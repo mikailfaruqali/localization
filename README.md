@@ -69,7 +69,7 @@ return [
     |
     */
 
-    'route'      => 'localization',
+    'route' => 'localization',
 
     /*
     |--------------------------------------------------------------------------
@@ -85,7 +85,22 @@ return [
     |
     */
 
-    'path'       => lang_path(),
+    'path' => lang_path(),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Base Locale
+    |--------------------------------------------------------------------------
+    |
+    | The base locale defines the default language for your application.
+    | All other languages will be loaded based on this locale.
+    |
+    | You can customize this to match the primary language of your application.
+    | In most cases, 'en' for English is the default.
+    |
+    */
+
+    'base-locale' => 'en',
 
     /*
     |--------------------------------------------------------------------------
@@ -98,7 +113,7 @@ return [
     |
     */
 
-    'exclude'    => [
+    'exclude' => [
         'auth.php',
         'validation.php',
         'pagination.php',
