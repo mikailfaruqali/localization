@@ -75,9 +75,6 @@ return [
     */
 
     'exclude' => [
-        'auth.php',
-        'validation.php',
-        'pagination.php',
-        'passwords.php',
+
     ],
 ];
