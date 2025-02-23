@@ -59,7 +59,7 @@
             <div class="modal-body">
                 <div class="form-group key-form-group">
                     <label for="key" class="col-form-label">Key</label>
-                    <input type="text" class="form-control" name="key" id="key">
+                    <textarea class="form-control" name="key" id="key" rows="2"></textarea>
                 </div>
                 <input type="hidden" name="languages" value="{{ json_encode($content->keys()) }}">
             </div>
