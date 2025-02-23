@@ -19,6 +19,10 @@ function addNewRow(element) {
         return showToast('Please enter a key', 'danger');
     }
 
+    if (!/^[A-Za-z0-9_-]+$/.test(key)) {
+        return showToast('Invalid key. Only letters, numbers, underscores, and dashes are allowed', 'danger');
+    }
+
     if (languages.some(l => translationTable.find(`textarea[name="${l}[${key}]"]`).length)) {
         return showToast('This key already exists', 'danger');
     }

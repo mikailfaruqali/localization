@@ -66,9 +66,14 @@ class LocalizationController
     private function getFiles()
     {
         return collect(File::files(sprintf('%s/%s', config()->string('snawbar-localization.path'), config()->string('snawbar-localization.base-locale'))))
-            ->reject(fn ($file) => in_array($file->getFilename(), config()->array('snawbar-localization.exclude')))
+            ->reject(fn ($file) => in_array($file->getFilename(), config()->array('snawbar-localization.exclude')) || $this->hasMulti($file->getRealPath()))
             ->map(fn ($file) => $file->getFilename())
             ->toArray();
+    }
+
+    public function hasMulti(string $filePath): bool
+    {
+        return tap($data = include $filePath) && (!is_array($data) || collect($data)->contains(fn ($value) => is_array($value)));
     }
 
     private function getFilesContent(array $languages, string $file)
@@ -96,7 +101,7 @@ class LocalizationController
     private function generatePhpFileContent(array $content): string
     {
         $lines = array_map(
-            fn ($key, $value) => sprintf("    '%s' => '%s',", $key, $value),
+            fn ($key, $value) => sprintf('    "%s" => "%s",', $key, $value),
             array_keys($content),
             $content
         );
