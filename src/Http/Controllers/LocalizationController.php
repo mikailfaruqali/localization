@@ -106,6 +106,6 @@ class LocalizationController
             $content
         );
 
-        return "<?php\n\nreturn  [\n" . implode("\n", $lines) . "\n];\n";
+        return "<?php\n\nreturn [\n" . implode("\n", $lines) . "\n];\n";
     }
 }
