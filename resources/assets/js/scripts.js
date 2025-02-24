@@ -64,8 +64,8 @@ function saveChanges(element) {
             $(element).html('Loading ...').prop("disabled", true);
         },
         success: function(response) {
-            if (response?.redirect) {
-                window.open(response.redirect, '_self');
+            if (response?.success) {
+                showToast(response.success);
             }
         },
         error: function(response) {

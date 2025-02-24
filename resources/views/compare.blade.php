@@ -1,7 +1,7 @@
 @extends('snawbar-localization::layout')
 
 @section('content')
-<div class="card shadow">
+<div class="card shadow mb-100">
     <div class="card-header">
         <h5 class="card-title">Edit</h5>
     </div>
@@ -33,21 +33,15 @@
                         </tr>
                     @endforeach
                 </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="100%">
-                            <a href="javascript:void(0)" class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#new-row-modal">Add New Row</a>
-                        </td>
-                    </tr>
-                </tfoot>
             </table>
             <input type="hidden" name="languages" value="{{ json_encode($content->keys()) }}">
             <input type="hidden" name="file" value="{{ $file }}">
         </form>
     </div>
-    <div class="card-footer">
-        <button type="button" class="btn btn-primary" data-form="localization-form" onclick="saveChanges(this)">Save Changes</button>
-    </div>
+</div>
+<div class="fixed-bottom text-center bg-white shadow-lg p-2">
+    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#new-row-modal">Add New Row</button>
+    <button type="button" class="btn btn-primary" data-form="localization-form" onclick="saveChanges(this)">Save Changes</button>
 </div>
 <div class="modal" id="new-row-modal">
     <div class="modal-dialog">
@@ -59,7 +53,7 @@
             <div class="modal-body">
                 <div class="form-group key-form-group">
                     <label for="key" class="col-form-label">Key</label>
-                    <input type="text" class="form-control" name="key" id="key">
+                    <textarea class="form-control" name="key" id="key" rows="2"></textarea>
                 </div>
                 <input type="hidden" name="languages" value="{{ json_encode($content->keys()) }}">
             </div>

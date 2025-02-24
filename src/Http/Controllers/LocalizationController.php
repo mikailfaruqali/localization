@@ -51,7 +51,7 @@ class LocalizationController
         }
 
         return response()->json([
-            'redirect' => route('snawbar.localization.view'),
+            'success' => 'Successfully updated',
         ]);
     }
 
