@@ -11,6 +11,7 @@
             <table class="table table-striped table-bordered text-center" id="translation-table">
                 <thead>
                     <tr>
+                        <td>NO.</td>
                         <td class="col-2">KEY</td>
                         @foreach ($content->keys() as $language)
                             <th scope="col">{{ strtoupper($language) }}</th>
@@ -21,6 +22,7 @@
                 <tbody>
                     @foreach ($baseKeys as $value)
                         <tr>
+                            <td>{{ $loop->iteration }}</td>
                             <td>{{ $value }}</td>
                             @foreach ($content->keys() as $language)
                                 <td>
