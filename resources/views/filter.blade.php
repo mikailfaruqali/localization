@@ -45,7 +45,7 @@
                                     @foreach ($keys as $key => $translation)
                                         <li class="list-group-item d-flex justify-content-between align-items-center">
                                             <span>{{ $key }}</span>
-                                            <a href="{{ route('snawbar.localization.compare', ['file' => $file]) }}" class="btn btn-primary btn-sm" target="_blank">Go to file</a>
+                                            <a href="{{ route('snawbar.localization.compare', ['file' => $file]) }}#{{ $key }}" class="btn btn-primary btn-sm" target="_blank">Find</a>
                                         </li>
                                     @endforeach
                                 </ul>

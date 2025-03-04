@@ -21,7 +21,7 @@
                 </thead>
                 <tbody>
                     @foreach ($baseKeys as $value)
-                        <tr>
+                        <tr id="{{ $value }}">
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $value }}</td>
                             @foreach ($content->keys() as $language)
