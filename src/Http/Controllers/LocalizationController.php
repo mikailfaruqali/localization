@@ -11,22 +11,23 @@ class LocalizationController
     public function index()
     {
         return view('snawbar-localization::filter', [
+            'missingKeys' => $this->getMissingKeys(),
             'languages' => $this->getLanguages(),
             'files' => $this->getFiles(),
         ]);
     }
 
-    public function compare(Request $request)
+    public function compare(Request $request, $file = NULL)
     {
+        $request->mergeIfMissing([
+            'file' => $file,
+        ]);
+
         $request->validate([
-            'languages' => 'nullable|array',
-            'languages.*' => ['nullable', 'string', Rule::in($this->getLanguages())],
             'file' => ['required', 'string', Rule::in($this->getFiles())],
         ]);
 
-        $this->mergeLanguages($request);
-
-        $selectedLanguageContents = $this->getFilesContent($request->languages, $request->file);
+        $selectedLanguageContents = $this->getFilesContent($this->getLanguages(), $request->file);
 
         return view('snawbar-localization::compare', [
             'baseKeys' => $this->getBaseKeys($selectedLanguageContents),
@@ -55,11 +56,31 @@ class LocalizationController
         ]);
     }
 
-    private function getLanguages()
+    private function getMissingKeys()
+    {
+        $missing = [];
+        $languages = $this->getLanguages(withoutBase: TRUE);
+
+        foreach ($this->getFiles() as $file) {
+            $contents = $this->getFilesContent(array_merge([config('snawbar-localization.base-locale')], $languages), $file);
+
+            foreach ($languages as $language) {
+                $secContent = $contents->get($language);
+                if ($diff = array_diff_key($contents->get(config('snawbar-localization.base-locale')), $secContent)) {
+                    $missing[$file][$language] = $diff;
+                }
+            }
+        }
+
+        return collect($missing);
+    }
+
+    private function getLanguages($withoutBase = FALSE)
     {
         return collect(File::directories(config()->string('snawbar-localization.path')))
+            ->when($withoutBase, fn ($collection) => $collection->reject(fn ($directory) => basename($directory) === config()->string('snawbar-localization.base-locale')))
+            ->sortByDesc(fn ($directory) => basename($directory) === config()->string('snawbar-localization.base-locale'))
             ->map(fn ($directory) => basename($directory))
-            ->reject(fn ($directory) => $directory === config()->string('snawbar-localization.base-locale'))
             ->toArray();
     }
 
@@ -71,9 +92,9 @@ class LocalizationController
             ->toArray();
     }
 
-    public function hasMulti(string $filePath): bool
+    private function hasMulti(string $filePath): bool
     {
-        return tap($data = include $filePath) && (!is_array($data) || collect($data)->contains(fn ($value) => is_array($value)));
+        return tap($data = include $filePath) && (! is_array($data) || collect($data)->contains(fn ($value) => is_array($value)));
     }
 
     private function getFilesContent(array $languages, string $file)
@@ -84,13 +105,6 @@ class LocalizationController
     private function getBaseKeys($selectedLanguageContents)
     {
         return array_keys($selectedLanguageContents->get(config()->string('snawbar-localization.base-locale')));
-    }
-
-    private function mergeLanguages(Request $request)
-    {
-        $request->merge([
-            'languages' => array_merge([config()->string('snawbar-localization.base-locale')], $request->get('languages', [])),
-        ]);
     }
 
     private function validateRequestLanguages(Request $request)

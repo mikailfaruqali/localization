@@ -1,10 +1,4 @@
 $(document).ready(function () {
-    $('#languages').select2({
-        theme: "bootstrap-5",
-        width: $(this).data('width') ? $(this).data('width') : $(this).hasClass('w-100') ? '100%' : 'style',
-        placeholder: $(this).data('placeholder'),
-    });
-
     $('#new-row-modal').on('show.bs.modal', function () {
         setTimeout(() => $(this).find('#key').focus(), 50);
     });

@@ -13,8 +13,6 @@
 
     <!-- StyleSheets -->
     <link rel="stylesheet" href="{{ asset('vendor/snawbar-localization/css/bootstrap.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('vendor/snawbar-localization/css/select2.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('vendor/snawbar-localization/css/select2-bootstrap-5-theme.min.css') }}">
     <link rel="stylesheet" href="{{ asset('vendor/snawbar-localization/css/styles.css') }}">
 
     <!-- Page Title  -->
@@ -40,7 +38,6 @@
 
     <!-- JavaScript -->
     <script src="{{ asset('vendor/snawbar-localization/js/bootstrap.min.js') }}"></script>
-    <script src="{{ asset('vendor/snawbar-localization/js/select2.min.js') }}"></script>
     <script src="{{ asset('vendor/snawbar-localization/js/scripts.js') }}"></script>
 </body>
 </html>

@@ -25,7 +25,7 @@
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $value }}</td>
                             @foreach ($content->keys() as $language)
-                                <td>
+                                <td class="{{ isset($content[$language][$value]) ? '' : 'bg-warning' }}">
                                     <textarea name="{{ $language }}[{{ $value }}]" class="form-control" rows="2">{{ $content[$language][$value] ?? '' }}</textarea>
                                 </td>
                             @endforeach
