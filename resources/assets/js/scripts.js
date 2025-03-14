@@ -8,6 +8,7 @@ function addNewRow(element) {
     const translationTable = $('#translation-table');
     const languages = tryParseJSON($(element).closest('.modal').find('input[name="languages"]').val());
     const key = $(element).closest('.modal').find('#key').val().trim();
+    const keysCount = translationTable.find('tbody tr').length;
 
     if (isEmpty(key)) {
         return showToast('Please enter a key', 'danger');
@@ -17,11 +18,13 @@ function addNewRow(element) {
         return showToast('Invalid key. Only letters, numbers, underscores, and dashes are allowed', 'danger');
     }
 
-    if (languages.some(l => translationTable.find(`textarea[name="${l}[${key}]"]`).length)) {
+    if (languages.some(language => translationTable.find(`textarea[name="${language}[${key}]"]`).length)) {
         return showToast('This key already exists', 'danger');
     }
 
-    let newRow = `<tr><td>${key}</td>`;
+    let newRow = `<tr><td>${keysCount + 1}</td>`;
+
+    newRow += `<td>${key}</td>`;
 
     languages.forEach(function (language) {
         newRow += `<td><textarea name="${language}[${key}]" class="form-control" rows="2"></textarea></td>`;
