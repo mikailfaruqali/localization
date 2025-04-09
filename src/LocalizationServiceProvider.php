@@ -3,14 +3,11 @@
 namespace Snawbar\Localization;
 
 use Illuminate\Support\ServiceProvider;
-use Snawbar\Localization\Macros\Macros;
 
 class LocalizationServiceProvider extends ServiceProvider
 {
     public function boot()
     {
-        Macros::register();
-
         $this->registerRoutes();
         $this->registerViews();
         $this->publishAssets();
