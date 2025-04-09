@@ -9,11 +9,11 @@ class LocalizationServiceProvider extends ServiceProvider
 {
     public function boot()
     {
+        Macros::register();
+
         $this->registerRoutes();
         $this->registerViews();
         $this->publishAssets();
-
-        Macros::register();
     }
 
     private function registerRoutes()
