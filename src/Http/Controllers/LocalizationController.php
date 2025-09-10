@@ -10,10 +10,16 @@ class LocalizationController
 {
     public function index()
     {
-        return view('snawbar-localization::filter', [
-            'missingKeys' => $this->getMissingKeys(),
+        $missingKeys = $this->getMissingKeys();
+        $files = $this->getFiles();
+        $sortedFiles = $this->sortFilesByProblems($files, $missingKeys);
+        $fileStatuses = $this->getFileStatuses($files, $missingKeys);
+
+        return view('snawbar-localization::file-selector', [
+            'missingKeys' => $missingKeys,
             'languages' => $this->getLanguages(),
-            'files' => $this->getFiles(),
+            'files' => $sortedFiles,
+            'fileStatuses' => $fileStatuses,
         ]);
     }
 
@@ -28,11 +34,24 @@ class LocalizationController
         ]);
 
         $selectedLanguageContents = $this->getFilesContent($this->getLanguages(), $request->file);
+        $baseKeys = $this->getBaseKeys($selectedLanguageContents);
+        
+        $missingKeysData = $this->getMissingKeys($request->file);
+        $missingCount = 0;
+        
+        if (isset($missingKeysData[$request->file])) {
+            $missingCount = array_sum(array_map('count', $missingKeysData[$request->file]));
+        }
+        
+        $completedCount = count($baseKeys) - $missingCount;
 
-        return view('snawbar-localization::compare', [
-            'baseKeys' => $this->getBaseKeys($selectedLanguageContents),
+        return view('snawbar-localization::editor', [
+            'baseKeys' => $baseKeys,
             'content' => $selectedLanguageContents,
             'file' => $request->file,
+            'totalKeys' => count($baseKeys),
+            'missingCount' => $missingCount,
+            'completedCount' => $completedCount,
         ]);
     }
 
@@ -41,8 +60,6 @@ class LocalizationController
         $request->merge([
             'languages' => json_decode($request->languages),
         ]);
-
-        $this->validateRequestLanguages($request);
 
         foreach ($request->languages as $language) {
             File::put(
@@ -56,23 +73,56 @@ class LocalizationController
         ]);
     }
 
-    private function getMissingKeys()
+    private function getMissingKeys($file = null)
     {
         $missing = [];
         $languages = $this->getLanguages(withoutBase: TRUE);
+        $filesToProcess = $file ? [$file] : $this->getFiles();
 
-        foreach ($this->getFiles() as $file) {
-            $contents = $this->getFilesContent(array_merge([config('snawbar-localization.base-locale')], $languages), $file);
+        foreach ($filesToProcess as $currentFile) {
+            $contents = $this->getFilesContent(array_merge([config('snawbar-localization.base-locale')], $languages), $currentFile);
 
             foreach ($languages as $language) {
                 $secContent = $contents->get($language);
                 if ($diff = array_diff_key($contents->get(config('snawbar-localization.base-locale')), $secContent)) {
-                    $missing[$file][$language] = $diff;
+                    $missing[$currentFile][$language] = $diff;
                 }
             }
         }
 
-        return collect($missing);
+        return $missing;
+    }
+
+    private function sortFilesByProblems(array $files, array $missingKeys)
+    {
+        $filesWithProblems = [];
+        $filesWithoutProblems = [];
+
+        foreach ($files as $file) {
+            if (isset($missingKeys[$file])) {
+                $filesWithProblems[] = $file;
+            } else {
+                $filesWithoutProblems[] = $file;
+            }
+        }
+
+        return array_merge($filesWithProblems, $filesWithoutProblems);
+    }
+
+    private function getFileStatuses(array $files, array $missingKeys)
+    {
+        $statuses = [];
+
+        foreach ($files as $file) {
+            if (isset($missingKeys[$file])) {
+                $totalMissing = array_sum(array_map('count', $missingKeys[$file]));
+                $statuses[$file] = sprintf('%d missing keys', $totalMissing);
+            } else {
+                $statuses[$file] = 'All complete';
+            }
+        }
+
+        return $statuses;
     }
 
     private function getLanguages($withoutBase = FALSE)
@@ -105,11 +155,6 @@ class LocalizationController
     private function getBaseKeys($selectedLanguageContents)
     {
         return array_keys($selectedLanguageContents->get(config()->string('snawbar-localization.base-locale')));
-    }
-
-    private function validateRequestLanguages(Request $request)
-    {
-        return $request->validate(array_reduce($request->languages, fn ($rules, $lang) => $rules + [$lang . '.*' => 'required|string'], []));
     }
 
     private function generatePhpFileContent(array $content): string

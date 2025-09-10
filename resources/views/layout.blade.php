@@ -4,40 +4,38 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
-    <!-- Fav Icon  -->
     <link rel="icon" type="image/x-icon" href="{{ asset('vendor/snawbar-localization/images/snawbar.png') }}">
-
-    <!--jquery-->
     <script type="text/javascript" src="{{ asset('vendor/snawbar-localization/js/jquery.min.js') }}"></script>
-
-    <!-- StyleSheets -->
-    <link rel="stylesheet" href="{{ asset('vendor/snawbar-localization/css/bootstrap.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('vendor/snawbar-localization/css/styles.css') }}">
-
-    <!-- Page Title  -->
+    <link rel="stylesheet" href="{{ asset('vendor/snawbar-localization/css/app.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <title>Snawbar Localization</title>
 </head>
 <body>
-    <nav class="navbar navbar-dark bg-dark shadow">
+    <nav class="navbar">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="{{ route('snawbar.localization.view') }}">
-                <img src="{{ asset('vendor/snawbar-localization/images/snawbar.png') }}" width="50" height="50" class="d-inline-block align-text-top">
-                <span class="ms-2">Snawbar</span>
-            </a>
-            <a href="https://snawbar.com" class="text-white text-decoration-none" target="_blank">www.snawbar.com</a>
+            <div class="navbar-content">
+                <a class="navbar-brand" href="{{ route('snawbar.localization.view') }}">
+                    <img src="{{ asset('vendor/snawbar-localization/images/snawbar.png') }}" alt="Snawbar">
+                    <span>Snawbar Localization</span>
+                </a>
+                <div class="navbar-right">
+                    <a href="https://snawbar.com" class="navbar-link" target="_blank">
+                        <i class="fas fa-external-link-alt"></i>
+                        snawbar.com
+                    </a>
+                </div>
+            </div>
         </div>
     </nav>
 
-    <div class="container-fluid mt-4 mb-4">
+    <main class="container main-content">
         @yield('content')
-    </div>
+    </main>
 
-    <!-- Toast -->
-    <div id="toast-container" class="position-fixed top-0 end-0 p-3"></div>
+    <div id="toast-container"></div>
 
-    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="{{ asset('vendor/snawbar-localization/js/bootstrap.min.js') }}"></script>
-    <script src="{{ asset('vendor/snawbar-localization/js/scripts.js') }}"></script>
+    <script src="{{ asset('vendor/snawbar-localization/js/app.js') }}"></script>
 </body>
 </html>
