@@ -47,7 +47,9 @@ class OverrideController extends Controller
             'value' => 'required|string',
         ]);
 
-        DB::table('override_translations')->updateOrInsert(['key' => $request->key, 'locale' => $request->language], [
+        DB::table('override_translations')->updateOrInsert(['id' => $request->id], [
+            'key' => $request->key,
+            'locale' => $request->language,
             'value' => $request->value,
         ]);
 

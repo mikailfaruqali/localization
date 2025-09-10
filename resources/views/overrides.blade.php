@@ -40,8 +40,8 @@
                                 </td>
                                 <td class="text-center align-middle">
                                     <button type="button" class="btn btn-outline-primary btn-sm edit-override-btn me-2"
-                                        data-key="{{ $override->key }}" data-locale="{{ $override->locale }}"
-                                        data-value="{{ $override->value }}">
+                                        data-id="{{ $override->id }}" data-key="{{ $override->key }}"
+                                        data-locale="{{ $override->locale }}" data-value="{{ $override->value }}">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     <button type="button" class="btn btn-outline-danger btn-sm delete-override-btn"
