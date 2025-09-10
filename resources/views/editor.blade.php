@@ -22,6 +22,24 @@
                         <div class="stat-label">Missing</div>
                     </div>
                 </div>
+                <div class="header-actions">
+                </div>
+            </div>
+        </div>
+
+        <div class="filter-controls mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="filter-buttons">
+                    <button type="button" class="btn btn-outline-warning btn-sm" id="show-missing-btn">
+                        <i class="fas fa-filter"></i> Show Missing Only
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm d-none" id="show-all-btn">
+                        <i class="fas fa-list"></i> Show All
+                    </button>
+                </div>
+                <div class="filter-info">
+                    <small class="text-muted" id="filter-status">Showing all {{ $totalKeys }} keys</small>
+                </div>
             </div>
         </div>
 

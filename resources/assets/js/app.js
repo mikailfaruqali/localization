@@ -8,6 +8,7 @@ class LocalizationManager {
         this.initializeFilePicker();
         this.initializeDeleteButtons();
         this.initializeAddKeyModal();
+        this.initializeMissingKeyFilter();
     }
     initializeFilePicker() {
         const fileCards = document.querySelectorAll('.file-card:not(.status-file-card)');
@@ -240,6 +241,93 @@ class LocalizationManager {
             </tr>`;
             
         tableBody.insertAdjacentHTML('beforeend', newRow);
+    }
+
+    initializeMissingKeyFilter() {
+        const showMissingBtn = document.getElementById('show-missing-btn');
+        const showAllBtn = document.getElementById('show-all-btn');
+        
+        if (!showMissingBtn || !showAllBtn) return;
+
+        showMissingBtn.addEventListener('click', () => {
+            this.showMissingKeysOnly();
+            showMissingBtn.classList.add('d-none');
+            showAllBtn.classList.remove('d-none');
+        });
+
+        showAllBtn.addEventListener('click', () => {
+            this.showAllKeys();
+            showAllBtn.classList.add('d-none');
+            showMissingBtn.classList.remove('d-none');
+        });
+    }
+
+    showMissingKeysOnly() {
+        const rows = document.querySelectorAll('#translation-table tbody tr');
+        const filterStatus = document.getElementById('filter-status');
+        let visibleCount = 0;
+        
+        rows.forEach((row, index) => {
+            const hasMissingFields = row.querySelector('.missing-field');
+            if (hasMissingFields) {
+                row.style.display = '';
+                visibleCount++;
+                row.querySelector('.text-center').textContent = visibleCount;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        if (filterStatus) {
+            filterStatus.textContent = `Showing ${visibleCount} missing translation${visibleCount !== 1 ? 's' : ''}`;
+        }
+
+        if (visibleCount === 0) {
+            this.showNoMissingMessage();
+        }
+    }
+
+    showAllKeys() {
+        const rows = document.querySelectorAll('#translation-table tbody tr');
+        const filterStatus = document.getElementById('filter-status');
+        
+        rows.forEach((row, index) => {
+            row.style.display = '';
+            row.querySelector('.text-center').textContent = index + 1;
+        });
+        
+        if (filterStatus) {
+            filterStatus.textContent = `Showing all ${rows.length} keys`;
+        }
+        
+        this.hideNoMissingMessage();
+    }
+
+    showNoMissingMessage() {
+        const tableBody = document.querySelector('#translation-table tbody');
+        const existingMessage = document.getElementById('no-missing-message');
+        
+        if (!existingMessage) {
+            const colCount = document.querySelectorAll('#translation-table thead th').length;
+            const messageRow = document.createElement('tr');
+            messageRow.id = 'no-missing-message';
+            messageRow.innerHTML = `
+                <td colspan="${colCount}" class="text-center py-5">
+                    <div class="alert alert-success mb-0">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Great! All translation keys are complete.
+                    </div>
+                </td>
+            `;
+            tableBody.appendChild(messageRow);
+        }
+    }
+
+    hideNoMissingMessage() {
+        const message = document.getElementById('no-missing-message');
+        if (message) {
+            message.remove();
+        }
     }
 }
 const localizationManager = new LocalizationManager();
