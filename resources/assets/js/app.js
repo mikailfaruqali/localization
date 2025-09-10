@@ -5,9 +5,6 @@ class LocalizationManager {
     }
     init() {
         this.setupEventListeners();
-        this.setupFormValidation();
-        this.trackChanges();
-        this.updateStats();
         this.initializeFilePicker();
         this.initializeDeleteButtons();
         this.initializeAddKeyModal();
@@ -45,8 +42,6 @@ class LocalizationManager {
     }
     setupEventListeners() {
         document.addEventListener('DOMContentLoaded', () => {
-            this.setupLoadingStates();
-            this.setupModalHandlers();
             this.setupButtonHandlers();
         });
         window.addEventListener('beforeunload', (e) => {
@@ -62,147 +57,8 @@ class LocalizationManager {
                 this.saveChanges(e.target.closest('.save-changes-btn'));
             }
         });
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('.modal-close')) {
-                const modal = e.target.closest('.modal-close').dataset.modal;
-                this.closeModal(modal);
-            }
-        });
     }
-    setupLoadingStates() {
-        const buttons = document.querySelectorAll('.btn[type="submit"], .btn[onclick]');
-        buttons.forEach(button => {
-            button.addEventListener('click', () => {
-                if (!button.classList.contains('btn-secondary')) {
-                    button.classList.add('loading');
-                    setTimeout(() => {
-                        button.classList.remove('loading');
-                    }, 2000);
-                }
-            });
-        });
-    }
-    setupModalHandlers() {
-        const modals = document.querySelectorAll('.modal');
-        modals.forEach(modal => {
-            const closeBtn = modal.querySelector('.close-btn');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => {
-                    this.closeModal(modal);
-                });
-            }
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    this.closeModal(modal);
-                }
-            });
-        });
-    }
-    showModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.classList.add('show');
-            document.body.style.overflow = 'hidden';
-        }
-    }
-    closeModal(modal) {
-        if (typeof modal === 'string') {
-            modal = document.getElementById(modal);
-        }
-        if (modal) {
-            modal.classList.remove('show');
-            document.body.style.overflow = '';
-        }
-    }
-    setupFormValidation() {
-        const forms = document.querySelectorAll('.needs-validation');
-        forms.forEach(form => {
-            form.addEventListener('submit', (event) => {
-                if (!form.checkValidity()) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
-                form.classList.add('was-validated');
-            });
-        });
-    }
-    trackChanges() {
-        const textareas = document.querySelectorAll('.translation-textarea, .textarea-field');
-        textareas.forEach(textarea => {
-            const originalValue = textarea.value;
-            textarea.addEventListener('input', () => {
-                this.hasChanges = true;
-                this.updateChangeIndicator();
-                this.updateCharCount(textarea);
-                this.updateStats();
-            });
-        });
-    }
-    updateChangeIndicator() {
-        const indicator = document.getElementById('changes-indicator');
-        if (indicator) {
-            indicator.textContent = 'Unsaved changes';
-            indicator.className = 'text-warning';
-        }
-    }
-    updateCharCount(textarea) {
-        const charCountEl = textarea.parentElement.querySelector('.char-count');
-        if (charCountEl) {
-            charCountEl.textContent = textarea.value.length;
-        }
-    }
-    updateStats() {
-        const completedCountEl = document.getElementById('completed-count');
-        const missingCountEl = document.getElementById('missing-count');
-        const totalCountEl = document.getElementById('total-count');
-        if (completedCountEl && missingCountEl) {
-            const textareas = document.querySelectorAll('.translation-textarea');
-            const languageCount = document.querySelectorAll('thead th').length - 3; 
-            if (textareas.length > 0 && languageCount > 0) {
-                const totalKeys = textareas.length / languageCount;
-                let completedKeys = 0;
-                const keyGroups = {};
-                textareas.forEach(textarea => {
-                    const key = textarea.dataset.key;
-                    if (!keyGroups[key]) {
-                        keyGroups[key] = [];
-                    }
-                    keyGroups[key].push(textarea);
-                });
-                Object.keys(keyGroups).forEach(key => {
-                    const hasAllTranslations = keyGroups[key].every(textarea => 
-                        textarea.value.trim() !== ''
-                    );
-                    if (hasAllTranslations) {
-                        completedKeys++;
-                    }
-                });
-                const missingKeys = totalKeys - completedKeys;
-                completedCountEl.textContent = completedKeys;
-                missingCountEl.textContent = missingKeys;
-                if (totalCountEl) {
-                    totalCountEl.textContent = totalKeys;
-                }
-            }
-            return;
-        }
-        const statsContainer = document.querySelector('.stats-container');
-        if (!statsContainer) return;
-        const textareas = document.querySelectorAll('.translation-textarea');
-        const total = textareas.length;
-        let completed = 0;
-        textareas.forEach(textarea => {
-            if (textarea.value.trim() !== '') {
-                completed++;
-            }
-        });
-        const missing = total - completed;
-        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
-        if (progressBar) progressBar.style.width = percentage + '%';
-        if (progressText) progressText.textContent = percentage + '% Complete';
-    }
+
     saveChanges(button) {
         const form = document.getElementById('localization-form');
         if (!form) return;
@@ -227,70 +83,33 @@ class LocalizationManager {
         .then(data => {
             if (data.success) {
                 this.hasChanges = false;
-                this.updateChangeIndicator();
-                this.showToast('Changes saved successfully', 'success');
+                Swal.fire({
+                    title: 'Success!',
+                    text: 'Changes saved successfully',
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false,
+                    zIndex: 9999
+                });
             } else {
                 throw new Error(data.message || 'Save failed');
             }
         })
         .catch(error => {
             console.error('Save failed:', error);
-            this.showToast('Failed to save changes', 'error');
+            Swal.fire({
+                title: 'Error!',
+                text: 'Failed to save changes',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#3085d6',
+                zIndex: 9999
+            });
         })
         .finally(() => {
             button.innerHTML = originalText;
             button.disabled = false;
         });
-    }
-    resetForm() {
-        if (confirm('Are you sure you want to reset all changes? This cannot be undone.')) {
-            location.reload();
-        }
-    }
-    showToast(message, type = 'success') {
-        const container = document.getElementById('toast-container');
-        if (!container) return;
-        const toast = document.createElement('div');
-        toast.className = 'toast';
-        toast.innerHTML = `
-            <div class="toast-content">
-                <span class="toast-icon">${type === 'success' ? '✅' : '❌'}</span>
-                <span class="toast-message">${message}</span>
-            </div>
-        `;
-        container.appendChild(toast);
-        setTimeout(() => {
-            toast.remove();
-        }, 3000);
-    }
-    filterTranslations(searchTerm) {
-        const rows = document.querySelectorAll('#translation-table tbody tr');
-        rows.forEach(row => {
-            const key = row.querySelector('.translation-key').textContent.toLowerCase();
-            const textareas = row.querySelectorAll('textarea');
-            let hasMatch = key.includes(searchTerm.toLowerCase());
-            textareas.forEach(textarea => {
-                if (textarea.value.toLowerCase().includes(searchTerm.toLowerCase())) {
-                    hasMatch = true;
-                }
-            });
-            row.style.display = hasMatch ? '' : 'none';
-        });
-    }
-    exportTranslations() {
-        const form = document.getElementById('localization-form');
-        const formData = new FormData(form);
-        const data = {};
-        for (let [key, value] of formData.entries()) {
-            data[key] = value;
-        }
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'translations.json';
-        a.click();
-        URL.revokeObjectURL(url);
     }
 
     initializeDeleteButtons() {
@@ -322,6 +141,20 @@ class LocalizationManager {
                     modalInstance.hide();
                     
                     keyInput.value = '';
+                    
+                    setTimeout(() => {
+                        const newRow = document.getElementById(keyValue);
+                        if (newRow) {
+                            newRow.scrollIntoView({ 
+                                behavior: 'smooth', 
+                                block: 'center' 
+                            });
+                            newRow.style.backgroundColor = '#fff3cd';
+                            setTimeout(() => {
+                                newRow.style.backgroundColor = '';
+                            }, 2000);
+                        }
+                    }, 300);
                 } else {
                     Swal.fire({
                         title: 'Error!',
@@ -352,7 +185,13 @@ class LocalizationManager {
                 if (result.isConfirmed) {
                     const row = document.getElementById(key);
                     if (row) {
-                        row.remove();
+                        row.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                        row.style.opacity = '0';
+                        row.style.transform = 'translateX(-20px)';
+                        
+                        setTimeout(() => {
+                            row.remove();
+                        }, 300);
                     }
                 }
             });
