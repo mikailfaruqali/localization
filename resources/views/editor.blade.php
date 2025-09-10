@@ -22,8 +22,6 @@
                         <div class="stat-label">Missing</div>
                     </div>
                 </div>
-                <div class="header-actions">
-                </div>
             </div>
         </div>
 
