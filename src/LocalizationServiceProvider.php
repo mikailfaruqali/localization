@@ -10,7 +10,7 @@ class LocalizationServiceProvider extends ServiceProvider
     {
         $this->registerRoutes();
         $this->registerViews();
-        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+        $this->registerMigrations();
         $this->publishAssets();
     }
 
@@ -22,6 +22,11 @@ class LocalizationServiceProvider extends ServiceProvider
     private function registerViews()
     {
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'snawbar-localization');
+    }
+
+    private function registerMigrations()
+    {
+        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
     }
 
     private function publishAssets()

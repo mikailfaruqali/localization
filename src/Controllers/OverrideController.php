@@ -1,6 +1,6 @@
 <?php
 
-namespace Snawbar\Localization\Http\Controllers;
+namespace Snawbar\Localization\Controllers;
 
 use Exception;
 use Illuminate\Http\Request;

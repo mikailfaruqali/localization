@@ -1,7 +1,7 @@
 <?php
 
 if (! function_exists('when')) {
-    function when($condition, $value, $default = null)
+    function when($condition, $value, $default = NULL)
     {
         $condition = $condition instanceof Closure ? $condition() : $condition;
 

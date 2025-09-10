@@ -1,6 +1,6 @@
 <?php
 
-namespace Snawbar\Localization\Http\Controllers;
+namespace Snawbar\Localization\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
