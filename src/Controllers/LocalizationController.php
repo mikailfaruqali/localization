@@ -61,6 +61,15 @@ class LocalizationController
         ]);
     }
 
+    public function getLanguages($withoutBase = FALSE)
+    {
+        return collect(File::directories(config()->string('snawbar-localization.path')))
+            ->when($withoutBase, fn ($collection) => $collection->reject(fn ($directory) => basename($directory) === config()->string('snawbar-localization.base-locale')))
+            ->sortByDesc(fn ($directory) => basename($directory) === config()->string('snawbar-localization.base-locale'))
+            ->map(fn ($directory) => basename($directory))
+            ->toArray();
+    }
+
     private function getMissingKeys($targetFiles = NULL)
     {
         $missingKeys = [];
@@ -114,15 +123,6 @@ class LocalizationController
         }
 
         return $statuses;
-    }
-
-    private function getLanguages($withoutBase = FALSE)
-    {
-        return collect(File::directories(config()->string('snawbar-localization.path')))
-            ->when($withoutBase, fn ($collection) => $collection->reject(fn ($directory) => basename($directory) === config()->string('snawbar-localization.base-locale')))
-            ->sortByDesc(fn ($directory) => basename($directory) === config()->string('snawbar-localization.base-locale'))
-            ->map(fn ($directory) => basename($directory))
-            ->toArray();
     }
 
     private function getFiles()

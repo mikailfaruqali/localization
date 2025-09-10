@@ -8,10 +8,10 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="filter-buttons">
                         <button type="button" class="btn btn-outline-warning btn-sm" id="show-missing-btn">
-                            <i class="fas fa-filter me-1"></i>Show Missing Only
+                            <i class="fas fa-filter me-2"></i>Show Missing Only
                         </button>
                         <button type="button" class="btn btn-outline-secondary btn-sm d-none" id="show-all-btn">
-                            <i class="fas fa-list me-1"></i>Show All
+                            <i class="fas fa-list me-2"></i>Show All
                         </button>
                     </div>
                     <div class="filter-status">
@@ -109,7 +109,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary add-new-row-btn">
-                        <i class="fas fa-plus me-1"></i> Add Key
+                        <i class="fas fa-plus me-2"></i> Add Key
                     </button>
                 </div>
             </div>

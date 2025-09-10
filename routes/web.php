@@ -16,7 +16,6 @@ Route::prefix(config()->string('snawbar-localization.route', 'localization'))
 
         Route::prefix('overrides')->controller(OverrideController::class)->name('overrides.')->group(function () {
             Route::get('/', 'index')->name('index');
-            Route::get('/search', 'search')->name('search');
             Route::post('/store', 'store')->name('store');
             Route::post('/update', 'update')->name('update');
             Route::delete('/delete', 'destroy')->name('destroy');

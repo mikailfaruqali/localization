@@ -66,3 +66,19 @@
 #translation-table tbody td:last-child {
     width: 100px;
 }
+
+#overrides-table tbody td:nth-child(1) {
+    width: 50px;
+}
+
+#overrides-table tbody td:nth-child(2) {
+    width: 300px;
+}
+
+#overrides-table tbody td:nth-child(3) {
+    width: 100px;
+}
+
+#overrides-table tbody td:last-child {
+    width: 120px;
+}
