@@ -1,52 +1,52 @@
 @extends('snawbar-localization::layout')
 
 @section('content')
-<div class="content-wrapper">
-    <div class="grid grid-cols-1 gap-4 mb-5">
-        <div class="card">
-            <div class="card-header">
-                <i class="fas fa-folder"></i> Select Translation File
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-11">
+            <!-- Header Section -->
+            <div class="text-center mb-4 px-3 px-sm-0">
+                <div
+                    class="d-inline-flex align-items-center justify-content-center bg-primary rounded-circle mb-3 file-selector-header">
+                    <i class="fas fa-language text-white fs-1"></i>
+                </div>
+                <h2 class="fw-bold text-dark mb-2">Choose Translation File</h2>
+                <p class="text-muted fs-5">Select a language file to start editing translations</p>
             </div>
-            <div class="card-body">
-                <form method="GET" action="{{ route('snawbar.localization.compare') }}" class="needs-validation" novalidate id="file-selection-form">
-                    <div class="grid grid-cols-1 gap-3">
-                        <div>
-                            <label class="label">Choose a translation file</label>
-                            <div class="file-picker">
-                                @foreach ($files as $item)
-                                    <div class="file-card {{ request('file') == $item ? 'selected' : '' }} {{ isset($missingKeys[$item]) ? 'has-problems' : '' }}" data-value="{{ $item }}">
-                                        <div class="file-info">
-                                            @if(isset($missingKeys[$item]))
-                                                <i class="fas fa-exclamation-triangle file-status-icon problem-icon"></i>
-                                            @else
-                                                <i class="fas fa-check-circle file-status-icon complete-icon"></i>
-                                            @endif
-                                            <div class="file-details">
-                                                <span class="file-name">{{ $item }}</span>
-                                                <span class="file-type">{{ $fileStatuses[$item] }}</span>
-                                            </div>
+
+            <!-- File Cards -->
+            <form method="GET" action="{{ route('snawbar.localization.compare') }}" id="file-selection-form">
+                <div class="row g-3 px-2 px-sm-0">
+                    @foreach ($files as $item)
+                        <div class="col-12 col-sm-6 col-lg-4">
+                            <div class="card file-card h-100 {{ when(isset($missingKeys[$item]), 'border-warning', 'border-success') }}"
+                                data-value="{{ $item }}">
+                                <div class="card-body p-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            <i class="fas {{ when(isset($missingKeys[$item]), 'fa-exclamation-triangle text-warning', 'fa-check-circle text-success') }} fs-5"></i>
                                         </div>
-                                        <div class="file-actions">
-                                            @if(request('file') == $item)
-                                                <i class="fas fa-check-circle selected-check"></i>
-                                            @else
-                                                <i class="fas fa-circle-plus add-icon"></i>
-                                            @endif
+                                        <div class="flex-grow-1 min-w-0">
+                                            <h6 class="card-title mb-1 text-truncate">{{ $item }}</h6>
+                                            <small class="text-muted">{{ $fileStatuses[$item] }}</small>
+                                        </div>
+                                        <div class="ms-2">
+                                            <i class="fas fa-arrow-right text-primary"></i>
                                         </div>
                                     </div>
-                                @endforeach
-                                <input type="hidden" name="file" id="selected-file" value="{{ request('file') }}" required>
-                            </div>
-                            @error('file')
-                                <div class="text-danger mt-2">
-                                    <i class="fas fa-exclamation-triangle"></i> {{ $message }}
                                 </div>
-                            @enderror
+                            </div>
                         </div>
+                    @endforeach
+                </div>
+
+                <input type="hidden" name="file" id="selected-file" required>
+
+                @error('file')
+                    <div class="alert alert-danger mt-4">
+                        <i class="fas fa-exclamation-triangle me-2"></i>{{ $message }}
                     </div>
-                </form>
-            </div>
+                @enderror
+            </form>
         </div>
     </div>
-</div>
 @endsection

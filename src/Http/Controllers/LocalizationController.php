@@ -10,48 +10,36 @@ class LocalizationController
 {
     public function index()
     {
-        $missingKeys = $this->getMissingKeys();
         $files = $this->getFiles();
+        $missingKeys = $this->getMissingKeys($files);
         $sortedFiles = $this->sortFilesByProblems($files, $missingKeys);
         $fileStatuses = $this->getFileStatuses($files, $missingKeys);
 
         return view('snawbar-localization::file-selector', [
             'missingKeys' => $missingKeys,
-            'languages' => $this->getLanguages(),
             'files' => $sortedFiles,
             'fileStatuses' => $fileStatuses,
         ]);
     }
 
-    public function compare(Request $request, $file = NULL)
+    public function compare(Request $request)
     {
-        $request->mergeIfMissing([
-            'file' => $file,
-        ]);
-
         $request->validate([
             'file' => ['required', 'string', Rule::in($this->getFiles())],
         ]);
 
-        $selectedLanguageContents = $this->getFilesContent($this->getLanguages(), $request->file);
-        $baseKeys = $this->getBaseKeys($selectedLanguageContents);
-        
-        $missingKeysData = $this->getMissingKeys($request->file);
-        $missingCount = 0;
-        
-        if (isset($missingKeysData[$request->file])) {
-            $missingCount = array_sum(array_map('count', $missingKeysData[$request->file]));
-        }
-        
-        $completedCount = count($baseKeys) - $missingCount;
+        $file = $request->file;
+        $contents = $this->getFilesContent($this->getLanguages(), $file);
+        $baseKeys = $this->getBaseKeys($contents);
+        $missing = $this->getMissingKeys($file)[$file] ?? [];
+        $missingcount = array_sum(array_map('count', $missing));
 
         return view('snawbar-localization::editor', [
             'baseKeys' => $baseKeys,
-            'content' => $selectedLanguageContents,
-            'file' => $request->file,
+            'content' => $contents,
+            'file' => $file,
             'totalKeys' => count($baseKeys),
-            'missingCount' => $missingCount,
-            'completedCount' => $completedCount,
+            'missingCount' => $missingcount,
         ]);
     }
 
@@ -73,24 +61,27 @@ class LocalizationController
         ]);
     }
 
-    private function getMissingKeys($file = null)
+    private function getMissingKeys($targetFiles = NULL)
     {
-        $missing = [];
+        $missingKeys = [];
         $languages = $this->getLanguages(withoutBase: TRUE);
-        $filesToProcess = $file ? [$file] : $this->getFiles();
+        $files = $targetFiles ? (array) $targetFiles : $this->getFiles();
+        $baseLocale = config('snawbar-localization.base-locale');
 
-        foreach ($filesToProcess as $currentFile) {
-            $contents = $this->getFilesContent(array_merge([config('snawbar-localization.base-locale')], $languages), $currentFile);
+        foreach ($files as $file) {
+            $fileContents = $this->getFilesContent([$baseLocale, ...$languages], $file);
+            $baseContent = $fileContents->get($baseLocale);
 
             foreach ($languages as $language) {
-                $secContent = $contents->get($language);
-                if ($diff = array_diff_key($contents->get(config('snawbar-localization.base-locale')), $secContent)) {
-                    $missing[$currentFile][$language] = $diff;
+                $languageContent = $fileContents->get($language);
+
+                if ($diff = array_diff_key($baseContent, $languageContent)) {
+                    $missingKeys[$file][$language] = $diff;
                 }
             }
         }
 
-        return $missing;
+        return $missingKeys;
     }
 
     private function sortFilesByProblems(array $files, array $missingKeys)

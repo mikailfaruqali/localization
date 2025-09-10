@@ -10,6 +10,7 @@ class LocalizationServiceProvider extends ServiceProvider
     {
         $this->registerRoutes();
         $this->registerViews();
+        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
         $this->publishAssets();
     }
 

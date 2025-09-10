@@ -29,7 +29,10 @@
     "autoload": {
         "psr-4": {
             "Snawbar\\Localization\\": "src/"
-        }
+        },
+        "files": [
+            "src/helpers.php"
+        ]
     },
     "extra": {
         "laravel": {
