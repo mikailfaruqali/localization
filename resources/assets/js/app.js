@@ -285,7 +285,7 @@ class LocalizationManager extends BaseAPI {
 
         $rows.each(function (index) {
             const $row = $(this);
-            const hasMissingFields = $row.find('.bg-danger, .missing-field').length > 0;
+            const hasMissingFields = $row.find('.missing-field').length > 0;
 
             if (hasMissingFields) {
                 $row.show();
