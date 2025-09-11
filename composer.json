@@ -1,6 +1,6 @@
 {
     "name": "mikailfaruqali/localization",
-    "description": "A robust Laravel package that provides an intuitive interface for managing, comparing, and editing language translation files. Easily maintain your localization resources with line-by-line comparisons, a Bootstrap-driven UI, and seamless support for adding new translation keys.",
+    "description": "A comprehensive Laravel package that provides an intuitive web interface for managing translation files and overrides. Features a modern Bootstrap 5 UI with advanced tools for comparing, editing, and synchronizing language files across multiple locales.",
     "keywords": [
         "laravel",
         "localization",
