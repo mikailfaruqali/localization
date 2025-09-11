@@ -1,41 +1,86 @@
 class BaseAPI {
     constructor() {
-        this.setupAxios();
+        this.setupAjax();
     }
 
-    setupAxios() {
-        axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
-        axios.defaults.headers.common['X-CSRF-TOKEN'] = this.getCsrfToken();
-        axios.defaults.headers.common['Accept'] = 'application/json';
+    setupAjax() {
+        $.ajaxSetup({
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': this.getCsrfToken(),
+                'Accept': 'application/json'
+            }
+        });
     }
 
     getCsrfToken() {
-        const token = document.querySelector('meta[name="csrf-token"]');
-        return token ? token.getAttribute('content') : '';
+        return $('meta[name="csrf-token"]').attr('content') || '';
     }
 
     handleError(error, defaultMessage = 'An error occurred') {
-        const message = error.response?.data?.message || error.message || defaultMessage;
+        let message = defaultMessage;
+        let validationErrors = null;
 
-        Swal.fire({
-            title: 'Error!',
-            text: message,
-            icon: 'error',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#3085d6',
-        });
+        if (error.responseJSON) {
+            message = error.responseJSON.message || message;
+            validationErrors = error.responseJSON.errors;
+        } else if (error.responseText) {
+            try {
+                const response = JSON.parse(error.responseText);
+                message = response.message || message;
+                validationErrors = response.errors;
+            } catch (e) {
+                message = error.statusText || message;
+            }
+        }
+
+        if (validationErrors) {
+            this.showValidationErrors(validationErrors);
+        } else {
+            this.showToast('error', message);
+        }
 
         console.error('API Error:', error);
     }
 
-    showSuccess(message = 'Operation completed successfully', timer = 2000) {
-        return Swal.fire({
-            title: 'Success!',
-            text: message,
-            icon: 'success',
-            timer: timer,
+    showValidationErrors(errors) {
+        let errorMessages = [];
+
+        if (typeof errors === 'object') {
+            $.each(errors, function (field, messages) {
+                if (Array.isArray(messages)) {
+                    errorMessages = errorMessages.concat(messages);
+                } else {
+                    errorMessages.push(messages);
+                }
+            });
+        }
+
+        const errorHtml = errorMessages.join('<br>');
+        this.showToast('error', errorHtml);
+    }
+
+    showToast(icon, message, timer = 3000) {
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
             showConfirmButton: false,
+            timer: timer,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                $(toast).on('mouseenter', () => Swal.stopTimer());
+                $(toast).on('mouseleave', () => Swal.resumeTimer());
+            }
         });
+
+        return Toast.fire({
+            icon: icon,
+            html: message
+        });
+    }
+
+    showSuccess(message = 'Operation completed successfully', timer = 2000) {
+        return this.showToast('success', message, timer);
     }
 }
 
@@ -54,89 +99,79 @@ class LocalizationManager extends BaseAPI {
     }
 
     setupButtonHandlers() {
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('.save-changes-btn')) {
-                this.saveChanges(e.target.closest('.save-changes-btn'));
+        $(document).on('click', '.save-changes-btn', (e) => {
+            this.saveChanges($(e.currentTarget));
+        });
+    }
+
+    saveChanges($button) {
+        const $form = $('#localization-form');
+        if (!$form.length) {
+            return;
+        }
+
+        const originalHtml = $button.html();
+        $button.html('<i class="fas fa-spinner fa-spin"></i> Saving...').prop('disabled', true);
+
+        const formData = new FormData($form[0]);
+
+        $.ajax({
+            url: $form.attr('action'),
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: (response) => {
+                this.showSuccess('Changes saved successfully');
+            },
+            error: (error) => {
+                this.handleError(error, 'Failed to save changes');
+            },
+            complete: () => {
+                $button.html(originalHtml).prop('disabled', false);
             }
         });
     }
 
-    async saveChanges(button) {
-        const form = document.getElementById('localization-form');
-        if (!form) return;
-
-        const originalText = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-        button.disabled = true;
-
-        try {
-            const formData = new FormData(form);
-            await axios.post(form.action, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
-
-            await this.showSuccess('Changes saved successfully');
-        } catch (error) {
-            this.handleError(error, 'Failed to save changes');
-        } finally {
-            button.innerHTML = originalText;
-            button.disabled = false;
-        }
-    }
-
     initializeDeleteButtons() {
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('.delete-btn')) {
-                e.preventDefault();
-                e.stopPropagation();
-                const button = e.target.closest('.delete-btn');
-                const key = button.getAttribute('data-key');
-                this.confirmDelete(key);
-                return false;
-            }
+        $(document).on('click', '.delete-btn', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const $button = $(e.currentTarget);
+            const key = $button.data('key');
+            this.confirmDelete(key);
+            return false;
         });
     }
 
     initializeAddKeyModal() {
-        const addNewRowBtn = document.querySelector('.add-new-row-btn');
-        const modal = document.getElementById('new-key-modal');
-        const keyInput = document.getElementById('key');
+        const $addNewRowBtn = $('.add-new-row-btn');
+        const $modal = $('#new-key-modal');
+        const $keyInput = $('#key');
 
-        if (addNewRowBtn) {
-            addNewRowBtn.addEventListener('click', () => {
-                const keyValue = keyInput.value.trim();
+        if ($addNewRowBtn.length) {
+            $addNewRowBtn.on('click', () => {
+                const keyValue = $keyInput.val().trim();
 
                 if (keyValue) {
                     this.addNewRowToTable(keyValue);
 
-                    const modalInstance = bootstrap.Modal.getInstance(modal) || new bootstrap.Modal(modal);
+                    const modalInstance = bootstrap.Modal.getInstance($modal[0]) || new bootstrap.Modal($modal[0]);
                     modalInstance.hide();
 
-                    keyInput.value = '';
+                    $keyInput.val('');
 
                     setTimeout(() => {
-                        const newRow = document.getElementById(keyValue);
-                        if (newRow) {
-                            newRow.scrollIntoView({
-                                behavior: 'smooth',
-                                block: 'center'
-                            });
-                            newRow.style.backgroundColor = '#fff3cd';
-                            setTimeout(() => {
-                                newRow.style.backgroundColor = '';
-                            }, 2000);
+                        const $newRow = $('#' + keyValue);
+
+                        if ($newRow.length) {
+                            $('html, body').animate({
+                                scrollTop: $newRow.offset().top - ($(window).height() / 2)
+                            }, 300);
                         }
                     }, 300);
                 } else {
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Please enter a translation key.',
-                        icon: 'error',
-                        confirmButtonText: 'OK',
-                        confirmButtonColor: '#3085d6',
-                    });
+                    this.showToast('error', 'Please enter a translation key.');
                 }
             });
         }
@@ -154,28 +189,32 @@ class LocalizationManager extends BaseAPI {
             cancelButtonText: 'Cancel',
         }).then((result) => {
             if (result.isConfirmed) {
-                const row = document.getElementById(key);
-                if (row) {
-                    row.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-                    row.style.opacity = '0';
-                    row.style.transform = 'translateX(-20px)';
+                const $row = $('#' + key);
+                if ($row.length) {
+                    $row.css({
+                        'transition': 'opacity 0.3s ease, transform 0.3s ease',
+                        'opacity': '0',
+                        'transform': 'translateX(-20px)'
+                    });
 
                     setTimeout(() => {
-                        row.remove();
-                    }, 300);
+                        $row.remove();
+                    }, 200);
                 }
             }
         });
     }
 
     addNewRowToTable(key) {
-        const tableBody = document.querySelector('#translation-table tbody');
-        const languagesInput = document.querySelector('input[name="languages"]');
+        const $tableBody = $('#translation-table tbody');
+        const $languagesInput = $('input[name="languages"]');
 
-        if (!tableBody || !languagesInput) return;
+        if (!$tableBody.length || !$languagesInput.length) {
+            return;
+        }
 
-        const languages = JSON.parse(languagesInput.value);
-        const rowCount = tableBody.children.length + 1;
+        const languages = JSON.parse($languagesInput.val());
+        const rowCount = $tableBody.children().length + 1;
 
         let newRow = `
             <tr id="${key}" class="translation-row">
@@ -186,7 +225,7 @@ class LocalizationManager extends BaseAPI {
                     </div>
                 </td>`;
 
-        languages.forEach(language => {
+        $.each(languages, function (index, language) {
             newRow += `
                 <td class="translation-cell">
                     <div class="position-relative">
@@ -209,52 +248,56 @@ class LocalizationManager extends BaseAPI {
                 </td>
             </tr>`;
 
-        tableBody.insertAdjacentHTML('beforeend', newRow);
+        $tableBody.append(newRow);
     }
 
     initializeMissingKeyFilter() {
-        const showMissingBtn = document.getElementById('show-missing-btn');
-        const showAllBtn = document.getElementById('show-all-btn');
-        const filterStatus = document.getElementById('filter-status');
+        const $showMissingBtn = $('#show-missing-btn');
+        const $showAllBtn = $('#show-all-btn');
+        const $filterStatus = $('#filter-status');
 
-        if (!showMissingBtn || !showAllBtn) return;
-
-        const totalRows = document.querySelectorAll('#translation-table tbody tr').length;
-        if (filterStatus) {
-            filterStatus.textContent = `Showing all ${totalRows} keys`;
+        if (!$showMissingBtn.length || !$showAllBtn.length) {
+            return;
         }
 
-        showMissingBtn.addEventListener('click', () => {
+        const totalRows = $('#translation-table tbody tr').length;
+        if ($filterStatus.length) {
+            $filterStatus.text(`Showing all ${totalRows} keys`);
+        }
+
+        $showMissingBtn.on('click', () => {
             this.showMissingKeysOnly();
-            showMissingBtn.classList.add('d-none');
-            showAllBtn.classList.remove('d-none');
+            $showMissingBtn.addClass('d-none');
+            $showAllBtn.removeClass('d-none');
         });
 
-        showAllBtn.addEventListener('click', () => {
+        $showAllBtn.on('click', () => {
             this.showAllKeys();
-            showAllBtn.classList.add('d-none');
-            showMissingBtn.classList.remove('d-none');
+            $showAllBtn.addClass('d-none');
+            $showMissingBtn.removeClass('d-none');
         });
     }
 
     showMissingKeysOnly() {
-        const rows = document.querySelectorAll('#translation-table tbody tr');
-        const filterStatus = document.getElementById('filter-status');
+        const $rows = $('#translation-table tbody tr');
+        const $filterStatus = $('#filter-status');
         let visibleCount = 0;
 
-        rows.forEach((row, index) => {
-            const hasMissingFields = row.querySelector('.bg-danger') || row.querySelector('.missing-field');
+        $rows.each(function (index) {
+            const $row = $(this);
+            const hasMissingFields = $row.find('.bg-danger, .missing-field').length > 0;
+
             if (hasMissingFields) {
-                row.style.display = '';
+                $row.show();
                 visibleCount++;
-                row.querySelector('.text-center').textContent = visibleCount;
+                $row.find('.text-center').first().text(visibleCount);
             } else {
-                row.style.display = 'none';
+                $row.hide();
             }
         });
 
-        if (filterStatus) {
-            filterStatus.textContent = `Showing ${visibleCount} missing translation${visibleCount !== 1 ? 's' : ''}`;
+        if ($filterStatus.length) {
+            $filterStatus.text(`Showing ${visibleCount} missing translation${visibleCount !== 1 ? 's' : ''}`);
         }
 
         if (visibleCount === 0) {
@@ -263,69 +306,66 @@ class LocalizationManager extends BaseAPI {
     }
 
     showAllKeys() {
-        const rows = document.querySelectorAll('#translation-table tbody tr');
-        const filterStatus = document.getElementById('filter-status');
+        const $rows = $('#translation-table tbody tr');
+        const $filterStatus = $('#filter-status');
 
-        rows.forEach((row, index) => {
-            row.style.display = '';
-            row.querySelector('.text-center').textContent = index + 1;
+        $rows.each(function (index) {
+            $(this).show();
+            $(this).find('.text-center').first().text(index + 1);
         });
 
-        if (filterStatus) {
-            filterStatus.textContent = `Showing all ${rows.length} keys`;
+        if ($filterStatus.length) {
+            $filterStatus.text(`Showing all ${$rows.length} keys`);
         }
 
         this.hideNoMissingMessage();
     }
 
     showNoMissingMessage() {
-        const tableBody = document.querySelector('#translation-table tbody');
-        const existingMessage = document.getElementById('no-missing-message');
+        const $tableBody = $('#translation-table tbody');
+        const $existingMessage = $('#no-missing-message');
 
-        if (!existingMessage) {
-            const colCount = document.querySelectorAll('#translation-table thead th').length;
-            const messageRow = document.createElement('tr');
-            messageRow.id = 'no-missing-message';
-            messageRow.innerHTML = `
-                <td colspan="${colCount}" class="text-center">
-                    <div class="alert alert-success mb-0">
-                        <i class="fas fa-check-circle me-2"></i>
-                        Great! All translation keys are complete.
-                    </div>
-                </td>
-            `;
-            tableBody.appendChild(messageRow);
+        if (!$existingMessage.length) {
+            const colCount = $('#translation-table thead th').length;
+            const messageRow = `
+                <tr id="no-missing-message">
+                    <td colspan="${colCount}" class="text-center">
+                        <div class="alert alert-success mb-0">
+                            <i class="fas fa-check-circle me-2"></i>
+                            Great! All translation keys are complete.
+                        </div>
+                    </td>
+                </tr>`;
+            $tableBody.append(messageRow);
         }
     }
 
     hideNoMissingMessage() {
-        const message = document.getElementById('no-missing-message');
-        if (message) {
-            message.remove();
-        }
+        $('#no-missing-message').remove();
     }
 
     initializeFileSelector() {
-        const fileCards = document.querySelectorAll('.file-card');
-        const selectedFileInput = document.getElementById('selected-file');
-        const form = document.getElementById('file-selection-form');
+        const $fileCards = $('.file-card');
+        const $selectedFileInput = $('#selected-file');
+        const $form = $('#file-selection-form');
 
-        if (!fileCards.length) return;
+        if (!$fileCards.length) {
+            return;
+        }
 
-        fileCards.forEach(card => {
-            card.addEventListener('click', () => {
-                fileCards.forEach(c => c.classList.remove('selected'));
-                card.classList.add('selected');
+        $fileCards.on('click', function () {
+            const $card = $(this);
+            $fileCards.removeClass('selected');
+            $card.addClass('selected');
 
-                const fileValue = card.getAttribute('data-value');
-                if (selectedFileInput) {
-                    selectedFileInput.value = fileValue;
-                }
+            const fileValue = $card.data('value');
+            if ($selectedFileInput.length) {
+                $selectedFileInput.val(fileValue);
+            }
 
-                if (form) {
-                    form.submit();
-                }
-            });
+            if ($form.length) {
+                $form.submit();
+            }
         });
     }
 }
@@ -335,92 +375,184 @@ class OverrideManager extends BaseAPI {
         super();
         this.currentEditId = null;
         this.bindEvents();
+        this.initializeSelect2();
     }
 
     bindEvents() {
-        document.getElementById('save-override-btn')?.addEventListener('click', () => this.handleSave());
-        document.getElementById('update-override-btn')?.addEventListener('click', () => this.handleUpdate());
+        $('#save-override-btn').on('click', () => this.handleSave());
+        $('#update-override-btn').on('click', () => this.handleUpdate());
 
-        document.addEventListener('click', (e) => {
-            const editBtn = e.target.closest('.edit-override-btn');
-            const delBtn = e.target.closest('.delete-override-btn');
-
-            if (editBtn) this.fillEditModal(editBtn);
-            if (delBtn) this.confirmDelete(delBtn.dataset.id);
+        $(document).on('click', '.edit-override-btn', (e) => {
+            this.fillEditModal($(e.currentTarget));
         });
 
-        document.addEventListener('show.bs.modal', (e) => {
-            if (e.target.id === 'add-override-modal') this.clearAddModal();
+        $(document).on('click', '.delete-override-btn', (e) => {
+            this.confirmDelete($(e.currentTarget).data('id'));
+        });
+
+        $(document).on('show.bs.modal', '#add-override-modal', () => {
+            this.clearAddModal();
+        });
+
+        $(document).on('shown.bs.modal', '#add-override-modal', () => {
+            $('#override-locale').focus();
+        });
+    }
+
+    initializeSelect2() {
+        if ($('#override-key').length) {
+            $('#override-key').select2({
+                theme: 'bootstrap-5',
+                dropdownParent: $('#add-override-modal'),
+                placeholder: 'Search for a translation key ...',
+                dropdownCssClass: 'select2-dropdown-with-spacing',
+                minimumInputLength: 2,
+                allowClear: true,
+                tags: false,
+                ajax: {
+                    url: '/localization/overrides/search',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            query: params.term
+                        };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data
+                        };
+                    },
+                    cache: true
+                },
+                escapeMarkup: function (markup) {
+                    return markup;
+                },
+                templateResult: function (data) {
+                    if (data.loading) {
+                        return data.text;
+                    }
+
+                    let markup = '<div>';
+
+                    markup += data.text;
+
+                    markup += '<br><small class="text-muted">' + data.value + '</small>';
+
+                    markup += '</div>';
+
+                    return $(markup);
+                },
+                templateSelection: function (data) {
+                    return data.text || data.id;
+                }
+            });
+        }
+
+        if ($('#override-locale').length) {
+            $('#override-locale').select2({
+                theme: 'bootstrap-5',
+                dropdownParent: $('#add-override-modal'),
+                placeholder: 'Select Language',
+                allowClear: true,
+                minimumResultsForSearch: 10,
+                dropdownCssClass: 'select2-dropdown-with-spacing',
+            });
+        }
+
+        $(document).on('select2:open', (e) => {
+            $(".select2-search__field[aria-controls='select2-" + e.target.id + "-results']").each(function (key, value) {
+                value.focus();
+            });
         });
     }
 
     validate(locale, key, value) {
         if (!locale || !key || !value) {
-            Swal.fire('Validation Error', 'Language, key, and value are required.', 'error');
+            this.showToast('error', 'Language, key, and value are required.');
             return false;
         }
         return true;
     }
 
-    async handleSave() {
-        const locale = document.getElementById('override-locale').value.trim();
-        const key = document.getElementById('override-key').value.trim();
-        const value = document.getElementById('override-value').value.trim();
+    handleSave() {
+        const locale = $('#override-locale').val();
+        const key = $('#override-key').val();
+        const value = $('#override-value').val().trim();
 
-        if (!this.validate(locale, key, value)) return;
+        if (!this.validate(locale, key, value)) {
+            return;
+        }
 
-        try {
-            const response = await axios.post('/localization/overrides/store', {
+        const $saveBtn = $('#save-override-btn');
+        const originalHtml = $saveBtn.html();
+        $saveBtn.html('<i class="fas fa-spinner fa-spin"></i> Saving...').prop('disabled', true);
+
+        $.ajax({
+            url: '/localization/overrides/store',
+            type: 'POST',
+            data: {
                 language: locale,
                 key: key,
                 value: value
-            });
-
-            if (response.data.success) {
-                bootstrap.Modal.getInstance(document.getElementById('add-override-modal')).hide();
-                setTimeout(() => window.location.reload(), 300);
-            } else {
-                this.showError(response.data);
+            },
+            success: (response) => {
+                if (response.success) {
+                    window.location.reload();
+                } else {
+                    this.showError(response);
+                }
+            },
+            error: (error) => {
+                this.handleError(error, 'Failed to add override');
+            },
+            complete: () => {
+                $saveBtn.html(originalHtml).prop('disabled', false);
             }
-        } catch (error) {
-            this.handleError(error);
-        }
+        });
     }
 
-    async handleUpdate() {
+    handleUpdate() {
         const id = this.currentEditId;
-        const locale = document.getElementById('edit-override-locale').value.trim();
-        const key = document.getElementById('edit-override-key').value.trim();
-        const value = document.getElementById('edit-override-value').value.trim();
+        const value = $('#edit-override-value').val().trim();
 
-        if (!this.validate(locale, key, value)) return;
-
-        try {
-            const response = await axios.post('/localization/overrides/update', {
-                id: id,
-                language: locale,
-                key: key,
-                value: value
-            });
-
-            if (response.data.success) {
-                bootstrap.Modal.getInstance(document.getElementById('edit-override-modal')).hide();
-                setTimeout(() => window.location.reload(), 300);
-            } else {
-                this.showError(response.data);
-            }
-        } catch (error) {
-            this.handleError(error);
+        if (!value) {
+            this.showToast('error', 'Value is required.');
+            return;
         }
+
+        const $updateBtn = $('#update-override-btn');
+        const originalHtml = $updateBtn.html();
+        $updateBtn.html('<i class="fas fa-spinner fa-spin"></i> Updating...').prop('disabled', true);
+
+        $.ajax({
+            url: '/localization/overrides/update',
+            type: 'POST',
+            data: {
+                id: id,
+                value: value
+            },
+            success: (response) => {
+                if (response.success) {
+                    window.location.reload();
+                } else {
+                    this.showError(response);
+                }
+            },
+            error: (error) => {
+                this.handleError(error, 'Failed to update override');
+            },
+            complete: () => {
+                $updateBtn.html(originalHtml).prop('disabled', false);
+            }
+        });
     }
 
-    fillEditModal(btn) {
-        this.currentEditId = btn.dataset.id;
-        document.getElementById('edit-override-locale').value = btn.dataset.locale;
-        document.getElementById('edit-override-key').value = btn.dataset.key;
-        document.getElementById('edit-override-value').value = btn.dataset.value;
+    fillEditModal($btn) {
+        this.currentEditId = $btn.data('id');
+        $('#edit-override-value').val($btn.data('value'));
 
-        new bootstrap.Modal(document.getElementById('edit-override-modal')).show();
+        new bootstrap.Modal($('#edit-override-modal')[0]).show();
     }
 
     confirmDelete(id) {
@@ -432,38 +564,55 @@ class OverrideManager extends BaseAPI {
             confirmButtonColor: '#dc3545',
             cancelButtonText: 'Cancel',
             confirmButtonText: 'Yes, delete it!'
-        }).then(async (result) => {
-            if (!result.isConfirmed) return;
-
-            try {
-                const response = await axios.delete('/localization/overrides/delete', {
-                    data: { id: id }
-                });
-
-                if (response.data?.success !== false) {
-                    setTimeout(() => window.location.reload(), 300);
-                } else {
-                    this.showError(response.data);
-                }
-            } catch (error) {
-                this.handleError(error);
+        }).then((result) => {
+            if (!result.isConfirmed) {
+                return;
             }
+
+            $.ajax({
+                url: '/localization/overrides/delete',
+                type: 'DELETE',
+                data: { id: id },
+                success: (response) => {
+                    if (response.success !== false) {
+                        window.location.reload();
+                    } else {
+                        this.showError(response);
+                    }
+                },
+                error: (error) => {
+                    this.handleError(error, 'Failed to delete override');
+                }
+            });
         });
     }
 
     clearAddModal() {
-        ['override-locale', 'override-key', 'override-value'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.value = '';
-        });
+        $('#override-locale').val('');
+        $('#override-value').val('');
+        $('#override-key').val(null).trigger('change');
     }
 
     showError(data) {
         let message = data.message || 'An error occurred';
-        if (data.errors) message = Object.values(data.errors).flat().join('\n');
-        Swal.fire('Error!', message, 'error');
+        if (data.errors) {
+            const errorMessages = [];
+            $.each(data.errors, function (field, messages) {
+                if (Array.isArray(messages)) {
+                    $.each(messages, function (index, msg) {
+                        errorMessages.push(msg);
+                    });
+                } else {
+                    errorMessages.push(messages);
+                }
+            });
+            message = errorMessages.join('<br>');
+        }
+        this.showToast('error', message);
     }
 }
 
-const localizationManager = new LocalizationManager();
-const overrideManager = new OverrideManager();
+$(document).ready(function () {
+    const localizationManager = new LocalizationManager();
+    const overrideManager = new OverrideManager();
+});

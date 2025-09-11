@@ -90,8 +90,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="override-key" class="form-label">Key</label>
-                            <input type="text" class="form-control" id="override-key" name="key"
-                                placeholder="e.g., welcome.message">
+                            <select class="form-control" id="override-key" name="key"></select>
                         </div>
                         <div class="mb-3">
                             <label for="override-value" class="form-label">Value</label>
@@ -120,14 +119,6 @@
                 </div>
                 <div class="modal-body">
                     <form id="edit-override-form">
-                        <div class="mb-3">
-                            <label for="edit-override-locale" class="form-label">Language</label>
-                            <input type="text" class="form-control" id="edit-override-locale" name="locale">
-                        </div>
-                        <div class="mb-3">
-                            <label for="edit-override-key" class="form-label">Key</label>
-                            <input type="text" class="form-control" id="edit-override-key" name="key">
-                        </div>
                         <div class="mb-3">
                             <label for="edit-override-value" class="form-label">Value</label>
                             <textarea class="form-control" id="edit-override-value" name="value" rows="4"></textarea>

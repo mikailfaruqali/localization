@@ -70,6 +70,14 @@ class LocalizationController
             ->toArray();
     }
 
+    public function getFiles()
+    {
+        return collect(File::files(sprintf('%s/%s', config()->string('snawbar-localization.path'), config()->string('snawbar-localization.base-locale'))))
+            ->reject(fn ($file) => in_array($file->getFilename(), config()->array('snawbar-localization.exclude')) || $this->hasMulti($file->getRealPath()))
+            ->map(fn ($file) => $file->getFilename())
+            ->toArray();
+    }
+
     private function getMissingKeys($targetFiles = NULL)
     {
         $missingKeys = [];
@@ -123,14 +131,6 @@ class LocalizationController
         }
 
         return $statuses;
-    }
-
-    private function getFiles()
-    {
-        return collect(File::files(sprintf('%s/%s', config()->string('snawbar-localization.path'), config()->string('snawbar-localization.base-locale'))))
-            ->reject(fn ($file) => in_array($file->getFilename(), config()->array('snawbar-localization.exclude')) || $this->hasMulti($file->getRealPath()))
-            ->map(fn ($file) => $file->getFilename())
-            ->toArray();
     }
 
     private function hasMulti(string $filePath): bool
