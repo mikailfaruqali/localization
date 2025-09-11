@@ -293,19 +293,22 @@ APP_DEBUG=true
 
 ## 📝 Changelog
 
-### Version 2.0.0
-- ✅ Complete Bootstrap 5 redesign
-- ✅ Advanced override system with searchable keys
-- ✅ Select2 integration for better UX
-- ✅ Individual override record management
-- ✅ Improved API structure
+### Version 4.0.0 (Current)
+- ✅ Complete Bootstrap 5 redesign with modern UI components
+- ✅ Advanced override system with searchable keys via Select2
+- ✅ Individual override record management with CRUD operations
+- ✅ Improved database structure with optimized indexing
+- ✅ Enhanced API structure with RESTful endpoints
+- ✅ Real-time search through translation files
+- ✅ Visual file status indicators with completion tracking
+- ✅ Responsive design for all device sizes
 - ✅ Enhanced validation and error handling
+- ✅ Configurable route prefixes and middleware
 
-### Version 1.0.0
-- ✅ Initial release
-- ✅ Basic translation file management
-- ✅ File comparison interface
-- ✅ Missing key detection
+### Previous Versions
+- **v3.x**: Enhanced translation management features
+- **v2.x**: Override system implementation
+- **v1.x**: Initial release with basic translation file management
 
 ## 🤝 Contributing
 
