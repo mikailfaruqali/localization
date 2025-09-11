@@ -10,7 +10,6 @@ class LocalizationServiceProvider extends ServiceProvider
     {
         $this->registerRoutes();
         $this->registerViews();
-        $this->registerMigrations();
         $this->publishAssets();
     }
 
@@ -24,11 +23,6 @@ class LocalizationServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'snawbar-localization');
     }
 
-    private function registerMigrations()
-    {
-        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
-    }
-
     private function publishAssets()
     {
         if ($this->app->runningInConsole()) {
@@ -39,6 +33,10 @@ class LocalizationServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__ . '/../config/localization.php' => config_path('snawbar-localization.php'),
             ], 'snawbar-localization-config');
+
+            $this->publishes([
+                __DIR__ . '/../database/migrations/' => database_path('migrations'),
+            ], 'snawbar-localization-migrations');
         }
     }
 }
