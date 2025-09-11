@@ -42,7 +42,7 @@
                     </thead>
                     <tbody>
                         @foreach ($baseKeys as $key)
-                            <tr id="{{ $key }}" class="translation-row">
+                            <tr id="{{ $key }}">
                                 <td class="text-center align-middle">{{ $loop->iteration }}</td>
                                 <td class="align-middle">{{ $key }}</td>
 
@@ -50,7 +50,7 @@
                                     <td class="translation-cell">
                                         <div class="position-relative">
                                             <textarea name="{{ $language }}[{{ $key }}]"
-                                                class="form-control translation-textarea {{ when(empty(Arr::get($content, sprintf('%s.%s', $language, $key), '')), 'bg-warning missing-field') }}" rows="3"
+                                                class="form-control translation-textarea {{ when(empty(Arr::get($content, sprintf('%s.%s', $language, $key), '')), 'missing-field') }}" rows="3"
                                                 placeholder="Enter {{ strtoupper($language) }} translation..." data-language="{{ $language }}"
                                                 data-key="{{ $key }}">{{ Arr::get($content, sprintf('%s.%s', $language, $key), '') }}</textarea>
                                         </div>

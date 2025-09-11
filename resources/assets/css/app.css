@@ -124,3 +124,7 @@ textarea.form-control:focus {
     box-shadow: none !important;
     outline: none !important;
 }
+
+.missing-field {
+    background-color: #ffcccc;
+}

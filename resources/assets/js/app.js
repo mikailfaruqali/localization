@@ -137,9 +137,8 @@ class LocalizationManager extends BaseAPI {
         $(document).on('click', '.delete-btn', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            const $button = $(e.currentTarget);
-            const key = $button.data('key');
-            this.confirmDelete(key);
+            const $row = $(e.currentTarget).closest('tr');
+            this.confirmDelete($row);
             return false;
         });
     }
@@ -177,7 +176,9 @@ class LocalizationManager extends BaseAPI {
         }
     }
 
-    confirmDelete(key) {
+    confirmDelete($row) {
+        const key = $row.attr('id');
+
         Swal.fire({
             title: 'Delete Translation Key?',
             text: `Are you sure you want to delete "${key}"? This cannot be undone.`,
@@ -189,18 +190,15 @@ class LocalizationManager extends BaseAPI {
             cancelButtonText: 'Cancel',
         }).then((result) => {
             if (result.isConfirmed) {
-                const $row = $('#' + key);
-                if ($row.length) {
-                    $row.css({
-                        'transition': 'opacity 0.3s ease, transform 0.3s ease',
-                        'opacity': '0',
-                        'transform': 'translateX(-20px)'
-                    });
+                $row.css({
+                    'transition': 'opacity 0.3s ease, transform 0.3s ease',
+                    'opacity': '0',
+                    'transform': 'translateX(-20px)'
+                });
 
-                    setTimeout(() => {
-                        $row.remove();
-                    }, 200);
-                }
+                setTimeout(() => {
+                    $row.remove();
+                }, 200);
             }
         });
     }
@@ -217,13 +215,9 @@ class LocalizationManager extends BaseAPI {
         const rowCount = $tableBody.children().length + 1;
 
         let newRow = `
-            <tr id="${key}" class="translation-row">
+            <tr id="${key}">
                 <td class="text-center align-middle">${rowCount}</td>
-                <td class="align-middle">
-                    <div class="key-container">
-                        <code class="translation-key">${key}</code>
-                    </div>
-                </td>`;
+                <td class="align-middle">${key}</td>`;
 
         $.each(languages, function (index, language) {
             newRow += `
@@ -234,7 +228,6 @@ class LocalizationManager extends BaseAPI {
                             placeholder="Enter ${language.toUpperCase()} translation..."
                             data-language="${language}"
                             data-key="${key}"></textarea>
-                        <div class="status-indicator missing" title="Missing translation"></div>
                     </div>
                 </td>`;
         });
