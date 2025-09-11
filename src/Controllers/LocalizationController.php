@@ -90,10 +90,15 @@ class LocalizationController
             $baseContent = $fileContents->get($baseLocale);
 
             foreach ($languages as $language) {
-                $languageContent = $fileContents->get($language);
+                $languageContent = $fileContents->get($language, []);
 
-                if ($diff = array_diff_key($baseContent, $languageContent)) {
-                    $missingKeys[$file][$language] = $diff;
+                $missingByKey = array_diff_key($baseContent, $languageContent);
+
+                $blankByKey = array_intersect_key($baseContent, $languageContent);
+                $blankByKey = array_filter($blankByKey, fn ($value) => blank($languageContent[array_search($value, $baseContent, TRUE)]));
+
+                if ($missingByKey || $blankByKey) {
+                    $missingKeys[$file][$language] = $missingByKey + $blankByKey;
                 }
             }
         }

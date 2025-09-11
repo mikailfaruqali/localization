@@ -50,7 +50,7 @@
                                     <td class="translation-cell">
                                         <div class="position-relative">
                                             <textarea name="{{ $language }}[{{ $key }}]"
-                                                class="form-control translation-textarea {{ when(! isset($content[$language][$key]), 'bg-danger text-white') }}" rows="3"
+                                                class="form-control translation-textarea {{ when(blank(Arr::get($content, sprintf('%s.%s', $language, $key), '')), 'bg-danger text-white') }}" rows="3"
                                                 placeholder="Enter {{ strtoupper($language) }} translation..." data-language="{{ $language }}"
                                                 data-key="{{ $key }}">{{ Arr::get($content, sprintf('%s.%s', $language, $key), '') }}</textarea>
                                         </div>
