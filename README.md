@@ -33,7 +33,7 @@ A comprehensive Laravel package that provides an intuitive web interface for man
 
 ### Step 1: Install via Composer
 ```bash
-composer require snawbar/localization
+composer require mikailfaruqali/localization
 ```
 
 ### Step 2: Publish Configuration
@@ -48,6 +48,7 @@ php artisan vendor:publish --tag=snawbar-localization-assets
 
 ### Step 4: Run Migrations
 ```bash
+php artisan vendor:publish --tag=snawbar-localization-migrations
 php artisan migrate
 ```
 
@@ -72,22 +73,35 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Translation File Path
+    | Route Configuration
     |--------------------------------------------------------------------------
     |
-    | The path where your translation files are stored.
-    | This should be relative to your Laravel project root.
+    | Define the base route prefix for the localization package.
+    | For example, if set to 'localization', the routes will be:
+    | - /localization/view (file selector)
+    | - /localization/compare (translation editor)
     |
     */
-    'path' => resource_path('lang'),
+    'route' => 'localization',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Language File Path
+    |--------------------------------------------------------------------------
+    |
+    | Define the path where language files are stored.
+    | By default, this points to the application's `lang` directory.
+    |
+    */
+    'path' => lang_path(),
 
     /*
     |--------------------------------------------------------------------------
     | Base Locale
     |--------------------------------------------------------------------------
     |
-    | The primary locale that serves as the reference for other translations.
-    | This locale will be used to detect missing keys in other languages.
+    | The base locale defines the default language for your application.
+    | All other languages will be loaded based on this locale.
     |
     */
     'base-locale' => 'en',
@@ -97,13 +111,12 @@ return [
     | Excluded Files
     |--------------------------------------------------------------------------
     |
-    | Files that should be excluded from the translation manager.
-    | Add any files you don't want to be editable through the interface.
+    | Specify any language files that should be excluded from being loaded
+    | or compared within the package.
     |
     */
     'exclude' => [
-        'validation.php',
-        'passwords.php',
+        // Add files to exclude, e.g., 'validation.php'
     ],
 ];
 ```
@@ -114,14 +127,16 @@ return [
 
 Visit the localization manager in your browser:
 ```
-https://your-app.com/localization
+https://your-app.com/localization/view
 ```
 
 ### File Management
 
-1. **File Overview**: The main dashboard shows all translation files with their completion status
-2. **Missing Key Indicators**: Files with missing translations are highlighted and sorted to the top
-3. **File Selection**: Click on any file to open the translation editor
+1. **File Selector**: The main dashboard shows all translation files with their completion status
+2. **Visual Status Indicators**: 
+   - ✅ Green check: All translations complete
+   - ⚠️ Yellow warning: Missing translations detected
+3. **File Selection**: Click on any file card to open the translation editor
 
 ### Translation Editor
 
@@ -131,6 +146,8 @@ https://your-app.com/localization
 4. **Bulk Save**: Save all changes at once with validation
 
 ### Override Management
+
+Access overrides at: `https://your-app.com/localization/overrides`
 
 #### Creating Overrides
 1. Navigate to the **Overrides** section
@@ -157,12 +174,12 @@ The package creates an `override_translations` table:
 ```sql
 CREATE TABLE override_translations (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    locale VARCHAR(10) NOT NULL,
     key VARCHAR(255) NOT NULL,
-    value TEXT NOT NULL,
-    created_at TIMESTAMP NULL,
-    updated_at TIMESTAMP NULL,
-    INDEX idx_locale_key (locale, key)
+    locale VARCHAR(2) NOT NULL,
+    value TEXT NULL,
+    UNIQUE KEY unique_key_locale (key, locale),
+    KEY idx_key (key),
+    KEY idx_locale (locale)
 );
 ```
 
@@ -171,7 +188,7 @@ CREATE TABLE override_translations (
 The package provides RESTful endpoints:
 
 #### Translation Files
-- `GET /localization` - File overview dashboard
+- `GET /localization/view` - File selector dashboard
 - `GET /localization/compare?file={filename}` - Translation editor
 - `POST /localization/update` - Save translation changes
 
@@ -191,6 +208,15 @@ Add authentication or authorization:
 'middleware' => ['web', 'auth', 'can:manage-translations'],
 ```
 
+### Route Customization
+
+Change the base route prefix:
+
+```php
+// config/snawbar-localization.php
+'route' => 'admin/translations', // Changes URL to /admin/translations/view
+```
+
 ### File Exclusion
 
 Protect sensitive files from editing:
@@ -201,7 +227,6 @@ Protect sensitive files from editing:
     'validation.php',
     'passwords.php',
     'pagination.php',
-    'custom-secure.php',
 ],
 ```
 
