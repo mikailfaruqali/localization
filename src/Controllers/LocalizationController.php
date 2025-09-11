@@ -87,15 +87,18 @@ class LocalizationController
 
         foreach ($files as $file) {
             $fileContents = $this->getFilesContent([$baseLocale, ...$languages], $file);
-            $baseContent = $fileContents->get($baseLocale);
+            $baseContent = $fileContents->get($baseLocale, []);
 
             foreach ($languages as $language) {
                 $languageContent = $fileContents->get($language, []);
 
                 $missingByKey = array_diff_key($baseContent, $languageContent);
 
-                $blankByKey = array_intersect_key($baseContent, $languageContent);
-                $blankByKey = array_filter($blankByKey, fn ($value) => blank($languageContent[array_search($value, $baseContent, TRUE)]));
+                $blankByKey = array_filter(
+                    $languageContent,
+                    fn ($languageValue) => blank($languageValue)
+                );
+                $blankByKey = array_intersect_key($baseContent, $blankByKey);
 
                 if ($missingByKey || $blankByKey) {
                     $missingKeys[$file][$language] = $missingByKey + $blankByKey;
