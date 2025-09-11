@@ -5,6 +5,7 @@ namespace Snawbar\Localization\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use Snawbar\Localization\Middleware\OverrideTranslations;
 
 class OverrideController extends Controller
 {
@@ -50,6 +51,8 @@ class OverrideController extends Controller
             'value' => $request->value,
         ]);
 
+        OverrideTranslations::clearCache($request->input('language'));
+
         return response()->json([
             'success' => 'Successfully added',
         ]);
@@ -61,9 +64,13 @@ class OverrideController extends Controller
             'value' => 'required|string',
         ]);
 
+        $override = DB::table('override_translations')->find($request->id);
+
         DB::table('override_translations')->updateOrInsert(['id' => $request->id], [
             'value' => $request->value,
         ]);
+
+        OverrideTranslations::clearCache($override->locale);
 
         return response()->json([
             'success' => 'Successfully updated',
@@ -72,6 +79,10 @@ class OverrideController extends Controller
 
     public function destroy(Request $request)
     {
+        $override = DB::table('override_translations')->find($request->id);
+
+        OverrideTranslations::clearCache($override->locale);
+
         DB::table('override_translations')->where('id', $request->id)->delete();
 
         return response()->json([
