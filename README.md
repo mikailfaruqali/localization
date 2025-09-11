@@ -1,53 +1,309 @@
-# Localization
+# Snawbar Localization Manager
 
-A robust Laravel package that provides an intuitive interface for managing, comparing, and editing language translation files. Easily maintain your localization resources with line-by-line comparisons, a Bootstrap-driven UI, and seamless support for adding new translation keys.
+A comprehensive Laravel package that provides an intuitive web interface for managing translation files and overrides. Features a modern Bootstrap 5 UI with advanced tools for comparing, editing, and synchronizing language files across multiple locales.
 
-## Features
-- Easy Translation Management: Edit your language files directly from the browser
-- Line-by-Line Comparison: Compare translation keys across multiple languages
-- Bootstrap-Driven UI: Modern responsive interface for localization
-- Customizable: Configure middleware, file paths, and excluded files
-- Seamless Integration: Works with Laravel 10 & 11 and PHP ^8.0
-- Key Synchronization: Add new translation keys across all languages
-- Validation: Ensure translation integrity with built-in checks
-- File Protection: Exclude critical files from modification
+## 🚀 Features
 
-## Installation
+### Core Translation Management
+- **Visual File Comparison**: Side-by-side comparison of translation keys across multiple languages
+- **Missing Key Detection**: Automatically identifies missing translations with visual indicators
+- **Real-time Editing**: Edit translation values directly in the browser with instant validation
+- **File Status Overview**: Quick overview of translation completeness for each file
 
-Install the package via Composer:
+### Advanced Override System
+- **Translation Overrides**: Create custom translation overrides without modifying core files
+- **Searchable Key Selection**: Select2-powered search through all translation keys across files
+- **CRUD Operations**: Complete create, read, update, delete functionality for overrides
+- **Individual Record Management**: Manage each override independently with precise control
 
+### Modern User Interface
+- **Bootstrap 5 Design**: Clean, responsive interface that works on all devices
+- **Interactive Components**: Modern modals, dropdowns, and form elements
+- **Visual Feedback**: SweetAlert2 notifications for all user actions
+- **File Organization**: Intelligent file sorting with priority for files containing missing keys
+
+### Technical Features
+- **Laravel 10+ Compatible**: Full support for modern Laravel versions
+- **PHP 8.0+ Support**: Built with modern PHP features and type declarations
+- **Middleware Protection**: Configurable middleware for route protection
+- **Asset Management**: Organized CSS/JS assets with proper Laravel asset handling
+- **Database Integration**: Efficient database storage for translation overrides
+
+## 📦 Installation
+
+### Step 1: Install via Composer
 ```bash
-composer require mikailfaruqali/localization
+composer require snawbar/localization
 ```
 
-Publish the configuration file:
-
+### Step 2: Publish Configuration
 ```bash
 php artisan vendor:publish --tag=snawbar-localization-config
 ```
 
-Publish package assets (CSS/JS):
-
+### Step 3: Publish Assets
 ```bash
 php artisan vendor:publish --tag=snawbar-localization-assets
 ```
 
-## Configuration
+### Step 4: Run Migrations
+```bash
+php artisan migrate
+```
 
-Configure your settings in config/snawbar-localization.php:
+## ⚙️ Configuration
+
+Configure the package in `config/snawbar-localization.php`:
 
 ```php
 <?php
 
 return [
-
     /*
     |--------------------------------------------------------------------------
     | Middleware Configuration
     |--------------------------------------------------------------------------
     |
-    | Define the middleware that should be applied to the routes of the
-    | localization package. By default, it includes "web" middleware,
+    | Define the middleware that should be applied to the routes.
+    | You can add authentication, authorization, or any custom middleware.
+    |
+    */
+    'middleware' => ['web'],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Translation File Path
+    |--------------------------------------------------------------------------
+    |
+    | The path where your translation files are stored.
+    | This should be relative to your Laravel project root.
+    |
+    */
+    'path' => resource_path('lang'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Base Locale
+    |--------------------------------------------------------------------------
+    |
+    | The primary locale that serves as the reference for other translations.
+    | This locale will be used to detect missing keys in other languages.
+    |
+    */
+    'base-locale' => 'en',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Excluded Files
+    |--------------------------------------------------------------------------
+    |
+    | Files that should be excluded from the translation manager.
+    | Add any files you don't want to be editable through the interface.
+    |
+    */
+    'exclude' => [
+        'validation.php',
+        'passwords.php',
+    ],
+];
+```
+
+## 🎯 Usage
+
+### Accessing the Interface
+
+Visit the localization manager in your browser:
+```
+https://your-app.com/localization
+```
+
+### File Management
+
+1. **File Overview**: The main dashboard shows all translation files with their completion status
+2. **Missing Key Indicators**: Files with missing translations are highlighted and sorted to the top
+3. **File Selection**: Click on any file to open the translation editor
+
+### Translation Editor
+
+1. **Side-by-Side Comparison**: View all languages for a file in organized columns
+2. **Edit Translations**: Click on any translation value to edit it inline
+3. **Missing Key Highlighting**: Missing translations are clearly marked
+4. **Bulk Save**: Save all changes at once with validation
+
+### Override Management
+
+#### Creating Overrides
+1. Navigate to the **Overrides** section
+2. Click **"Add Override"**
+3. **Search for Keys**: Use the searchable dropdown to find translation keys
+   - Type to search across all translation files
+   - Format: `file.key` (e.g., `auth.failed`, `validation.required`)
+   - Preview original values in the dropdown
+4. **Select Language**: Choose the target language
+5. **Enter Value**: Provide the override translation
+6. **Save**: Create the override
+
+#### Managing Existing Overrides
+- **View All**: See all overrides in a organized table
+- **Edit Values**: Modify only the translation value (key and language are locked)
+- **Delete**: Remove overrides when no longer needed
+- **Search**: Find specific overrides quickly
+
+## 🔧 Advanced Features
+
+### Database Structure
+
+The package creates an `override_translations` table:
+```sql
+CREATE TABLE override_translations (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    locale VARCHAR(10) NOT NULL,
+    key VARCHAR(255) NOT NULL,
+    value TEXT NOT NULL,
+    created_at TIMESTAMP NULL,
+    updated_at TIMESTAMP NULL,
+    INDEX idx_locale_key (locale, key)
+);
+```
+
+### API Endpoints
+
+The package provides RESTful endpoints:
+
+#### Translation Files
+- `GET /localization` - File overview dashboard
+- `GET /localization/compare?file={filename}` - Translation editor
+- `POST /localization/update` - Save translation changes
+
+#### Override Management
+- `GET /localization/overrides` - Override management interface
+- `GET /localization/overrides/search?query={term}` - Search translation keys
+- `POST /localization/overrides/store` - Create new override
+- `POST /localization/overrides/update` - Update existing override
+- `DELETE /localization/overrides/delete` - Delete override
+
+### Custom Middleware
+
+Add authentication or authorization:
+
+```php
+// config/snawbar-localization.php
+'middleware' => ['web', 'auth', 'can:manage-translations'],
+```
+
+### File Exclusion
+
+Protect sensitive files from editing:
+
+```php
+// config/snawbar-localization.php
+'exclude' => [
+    'validation.php',
+    'passwords.php',
+    'pagination.php',
+    'custom-secure.php',
+],
+```
+
+## 🎨 Customization
+
+### Styling
+
+The package uses Bootstrap 5 with custom CSS. You can customize the appearance by:
+
+1. **Publishing Assets**: `php artisan vendor:publish --tag=snawbar-localization-assets`
+2. **Modifying CSS**: Edit `public/vendor/snawbar-localization/css/app.css`
+3. **Custom Themes**: Add your own CSS classes
+
+### JavaScript Customization
+
+Customize behavior by modifying:
+- `public/vendor/snawbar-localization/js/app.js`
+
+### Views
+
+Publish and customize views:
+```bash
+php artisan vendor:publish --tag=snawbar-localization-views
+```
+
+Then modify:
+- `resources/views/vendor/snawbar-localization/`
+
+## 🔒 Security Considerations
+
+1. **Middleware Protection**: Always use appropriate middleware for production
+2. **File Permissions**: Ensure proper file system permissions
+3. **Input Validation**: All inputs are validated and sanitized
+4. **CSRF Protection**: All forms include CSRF tokens
+5. **File Exclusion**: Exclude sensitive translation files
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**Assets not loading:**
+```bash
+php artisan vendor:publish --tag=snawbar-localization-assets --force
+```
+
+**Permission denied:**
+```bash
+chmod -R 755 resources/lang/
+```
+
+**Missing styles:**
+```bash
+php artisan config:clear
+php artisan view:clear
+```
+
+### Debug Mode
+
+Enable debug mode for development:
+```php
+// .env
+APP_DEBUG=true
+```
+
+## 📝 Changelog
+
+### Version 2.0.0
+- ✅ Complete Bootstrap 5 redesign
+- ✅ Advanced override system with searchable keys
+- ✅ Select2 integration for better UX
+- ✅ Individual override record management
+- ✅ Improved API structure
+- ✅ Enhanced validation and error handling
+
+### Version 1.0.0
+- ✅ Initial release
+- ✅ Basic translation file management
+- ✅ File comparison interface
+- ✅ Missing key detection
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+This package is open-sourced software licensed under the [MIT license](LICENSE).
+
+## 👥 Credits
+
+- **Author**: Mikail Faruq Ali
+- **Package**: Snawbar Localization
+- **Framework**: Laravel
+- **UI**: Bootstrap 5, Select2, SweetAlert2
+
+---
+
+**Need help?** Open an issue on GitHub or contact the maintainers.
     | ensuring session and CSRF protection support.
     |
     */
