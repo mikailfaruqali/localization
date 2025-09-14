@@ -5,6 +5,7 @@ namespace Snawbar\Localization\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Validation\Rule;
+use ZipArchive;
 
 class LocalizationController
 {
@@ -61,18 +62,35 @@ class LocalizationController
         ]);
     }
 
+    public function downloadLang()
+    {
+        $zipArchive = new ZipArchive;
+        $zipFile = storage_path('lang-files.zip');
+        $langPath = config('snawbar-localization.path');
+
+        if ($zipArchive->open($zipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE)) {
+            foreach (File::allFiles($langPath) as $file) {
+                $zipArchive->addFile($file->getRealPath(), $file->getRelativePathname());
+            }
+
+            $zipArchive->close();
+        }
+
+        return response()->download($zipFile)->deleteFileAfterSend(TRUE);
+    }
+
     public function getLanguages($withoutBase = FALSE)
     {
-        return collect(File::directories(config()->string('snawbar-localization.path')))
-            ->when($withoutBase, fn ($collection) => $collection->reject(fn ($directory) => basename($directory) === config()->string('snawbar-localization.base-locale')))
-            ->sortByDesc(fn ($directory) => basename($directory) === config()->string('snawbar-localization.base-locale'))
+        return collect(File::directories(config('snawbar-localization.path')))
+            ->when($withoutBase, fn ($collection) => $collection->reject(fn ($directory) => basename($directory) === config('snawbar-localization.base-locale')))
+            ->sortByDesc(fn ($directory) => basename($directory) === config('snawbar-localization.base-locale'))
             ->map(fn ($directory) => basename($directory))
             ->toArray();
     }
 
     public function getFiles()
     {
-        return collect(File::files(sprintf('%s/%s', config()->string('snawbar-localization.path'), config()->string('snawbar-localization.base-locale'))))
+        return collect(File::files(sprintf('%s/%s', config('snawbar-localization.path'), config('snawbar-localization.base-locale'))))
             ->reject(fn ($file) => in_array($file->getFilename(), config()->array('snawbar-localization.exclude')) || $this->hasMulti($file->getRealPath()))
             ->map(fn ($file) => $file->getFilename())
             ->toArray();
@@ -153,7 +171,7 @@ class LocalizationController
 
     private function getBaseKeys($selectedLanguageContents)
     {
-        return array_keys($selectedLanguageContents->get(config()->string('snawbar-localization.base-locale')));
+        return array_keys($selectedLanguageContents->get(config('snawbar-localization.base-locale')));
     }
 
     private function generatePhpFileContent(array $content): string

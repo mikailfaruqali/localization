@@ -44,6 +44,12 @@
                         </a>
                     </li>
                     <li class="nav-item mx-1 mx-lg-2">
+                        <a class="nav-link" href="{{ route('snawbar.localization.downloadAll') }}">
+                            <i class="fas fa-download me-2"></i>
+                            Download All
+                        </a>
+                    </li>
+                    <li class="nav-item mx-1 mx-lg-2">
                         <a class="nav-link" href="https://snawbar.com" target="_blank">
                             <i class="fas fa-external-link-alt me-2"></i>snawbar.com
                         </a>

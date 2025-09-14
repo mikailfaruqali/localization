@@ -4,14 +4,15 @@ use Illuminate\Support\Facades\Route;
 use Snawbar\Localization\Controllers\LocalizationController;
 use Snawbar\Localization\Controllers\OverrideController;
 
-Route::prefix(config()->string('snawbar-localization.route', 'localization'))
-    ->middleware(config()->array('snawbar-localization.middleware', ['web']))
+Route::prefix(config('snawbar-localization.route', 'localization'))
+    ->middleware(config('snawbar-localization.middleware', ['web']))
     ->name('snawbar.')
     ->group(function () {
         Route::controller(LocalizationController::class)->name('localization.')->group(function () {
             Route::get('view', 'index')->name('view');
             Route::get('compare', 'compare')->name('compare');
             Route::post('update', 'update')->name('update');
+            Route::get('download-all', 'downloadLang')->name('downloadAll');
         });
 
         Route::prefix('overrides')->controller(OverrideController::class)->name('overrides.')->group(function () {
