@@ -401,7 +401,7 @@ class OverrideManager extends BaseAPI {
                 dropdownCssClass: 'select2-dropdown-with-spacing',
                 minimumInputLength: 2,
                 allowClear: true,
-                tags: false,
+                tags: true,
                 ajax: {
                     url: '/localization/overrides/search',
                     dataType: 'json',
@@ -430,7 +430,9 @@ class OverrideManager extends BaseAPI {
 
                     markup += data.text;
 
-                    markup += '<br><small class="text-muted">' + data.value + '</small>';
+                    if (data.value) {
+                        markup += '<br><small class="text-muted">' + data.value + '</small>';
+                    }
 
                     markup += '</div>';
 
