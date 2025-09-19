@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Snawbar\Localization\Middleware;
 
 use Closure;
@@ -13,15 +11,15 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class OverrideTranslations
 {
-    private const CACHE_PREFIX = 'override_translations';
+    private const CACHE_PATTERN = 'override_translations.%s';
+
+    private const GROUP_SEPARATOR = '.';
 
     private const GLOBAL_NAMESPACE = '*';
 
-    private const KEY_SEPARATOR = '.';
-
     public static function clearCache(string $locale): void
     {
-        Cache::forget(self::getCacheKey($locale));
+        Cache::forget(self::cacheKey($locale));
     }
 
     public function handle(Request $request, Closure $next): Response
@@ -29,64 +27,46 @@ final class OverrideTranslations
         $locale = app()->getLocale();
         $overrides = $this->getOverrides($locale);
 
-        if ($overrides !== []) {
-            $this->applyOverrides($overrides, $locale);
+        if (blank($overrides)) {
+            return $next($request);
         }
+
+        $this->applyOverrides($overrides, $locale);
 
         return $next($request);
     }
 
-    private static function getCacheKey(string $locale): string
+    private static function cacheKey(string $locale): string
     {
-        return sprintf('%s.%s', self::CACHE_PREFIX, $locale);
+        return sprintf(self::CACHE_PATTERN, $locale);
     }
 
     private function getOverrides(string $locale): array
     {
         return Cache::rememberForever(
-            self::getCacheKey($locale),
-            fn (): array => $this->fetchOverridesFromDatabase($locale)
+            self::cacheKey($locale),
+            fn () => DB::table('override_translations')
+                ->where('locale', $locale)
+                ->pluck('value', 'key')
+                ->toArray()
         );
-    }
-
-    private function fetchOverridesFromDatabase(string $locale): array
-    {
-        return DB::table('override_translations')
-            ->where('locale', $locale)
-            ->pluck('value', 'key')
-            ->toArray();
     }
 
     private function applyOverrides(array $overrides, string $locale): void
     {
         $translator = app(Translator::class);
-        $groupedOverrides = $this->groupOverridesByNamespace($overrides);
 
-        foreach ($groupedOverrides as $namespace => $translations) {
-            $translator->addLines($translations, $locale, $namespace);
+        foreach ($this->extractGroups($overrides) as $group) {
+            $translator->load(self::GLOBAL_NAMESPACE, $group, $locale);
         }
+
+        $translator->addLines($overrides, $locale, self::GLOBAL_NAMESPACE);
     }
 
-    private function groupOverridesByNamespace(array $overrides): array
+    private function extractGroups(array $overrides): array
     {
-        $grouped = [];
-
-        foreach ($overrides as $key => $value) {
-            [$namespace, $translationKey] = $this->parseTranslationKey($key);
-            $grouped[$namespace][$translationKey] = $value;
-        }
-
-        return $grouped;
-    }
-
-    private function parseTranslationKey(string $key): array
-    {
-        if (! str_contains($key, self::KEY_SEPARATOR)) {
-            return [self::GLOBAL_NAMESPACE, $key];
-        }
-
-        [$namespace, $translationKey] = explode(self::KEY_SEPARATOR, $key, 2);
-
-        return [$namespace, $translationKey];
+        return array_values(array_unique(
+            array_map(fn ($key) => strtok($key, self::GROUP_SEPARATOR), array_keys($overrides))
+        ));
     }
 }
