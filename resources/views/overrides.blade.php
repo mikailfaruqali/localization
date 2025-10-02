@@ -107,6 +107,11 @@
                     </div>
 
                     <input type="hidden" id="modal-languages-data" value="{{ json_encode(array_values($languages)) }}">
+                    <input type="hidden" id="override-search-url" value="{{ route('snawbar.overrides.search') }}">
+                    <input type="hidden" id="override-original-values-url" value="{{ route('snawbar.overrides.originalValues') }}">
+                    <input type="hidden" id="override-store-url" value="{{ route('snawbar.overrides.store') }}">
+                    <input type="hidden" id="override-update-url" value="{{ route('snawbar.overrides.update') }}">
+                    <input type="hidden" id="override-delete-url" value="{{ route('snawbar.overrides.destroy') }}">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

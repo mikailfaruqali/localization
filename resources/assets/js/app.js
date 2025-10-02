@@ -403,9 +403,20 @@ class OverrideManager extends BaseAPI {
         super();
         this.currentEditId = null;
         this.languages = [];
+        this.urls = this.loadUrls();
         this.loadLanguages();
         this.bindEvents();
         this.initializeSelect2();
+    }
+
+    loadUrls() {
+        return {
+            search: $('#override-search-url').val() || '/localization/overrides/search',
+            originalValues: $('#override-original-values-url').val() || '/localization/overrides/original-values',
+            store: $('#override-store-url').val() || '/localization/overrides/store',
+            update: $('#override-update-url').val() || '/localization/overrides/update',
+            delete: $('#override-delete-url').val() || '/localization/overrides/delete'
+        };
     }
 
     bindEvents() {
@@ -508,7 +519,7 @@ class OverrideManager extends BaseAPI {
 
     buildAjaxConfig() {
         return {
-            url: '/localization/overrides/search',
+            url: this.urls.search,
             dataType: 'json',
             delay: 250,
             data: (params) => ({ query: params.term }),
@@ -551,7 +562,7 @@ class OverrideManager extends BaseAPI {
 
     fetchAndAddKey(key) {
         $.ajax({
-            url: '/localization/overrides/original-values',
+            url: this.urls.originalValues,
             type: 'GET',
             data: { key },
             success: (response) => this.insertKeyRow(key, response.values),
@@ -709,7 +720,7 @@ class OverrideManager extends BaseAPI {
         this.setButtonLoading($saveBtn, 'Saving...');
 
         $.ajax({
-            url: '/localization/overrides/store',
+            url: this.urls.store,
             type: 'POST',
             data: { overrides },
             success: (response) => this.handleSaveSuccess(response),
@@ -759,7 +770,7 @@ class OverrideManager extends BaseAPI {
         this.setButtonLoading($updateBtn, 'Updating...');
 
         $.ajax({
-            url: '/localization/overrides/update',
+            url: this.urls.update,
             type: 'POST',
             data: { id, value },
             success: (response) => this.handleUpdateSuccess(response),
@@ -799,7 +810,7 @@ class OverrideManager extends BaseAPI {
 
     deleteOverride(id) {
         $.ajax({
-            url: '/localization/overrides/delete',
+            url: this.urls.delete,
             type: 'DELETE',
             data: { id },
             success: (response) => this.handleDeleteSuccess(response),
