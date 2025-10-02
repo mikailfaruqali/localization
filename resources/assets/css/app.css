@@ -128,3 +128,11 @@ textarea.form-control:focus {
 .missing-field {
     background-color: #ffcccc;
 }
+
+.empty-icon {
+    font-size: 2rem;
+}
+
+.action-column {
+    width: 80px;
+}

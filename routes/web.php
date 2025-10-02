@@ -21,5 +21,6 @@ Route::prefix(config('snawbar-localization.route', 'localization'))
             Route::post('/store', 'store')->name('store');
             Route::post('/update', 'update')->name('update');
             Route::delete('/delete', 'destroy')->name('destroy');
+            Route::get('/original-values', 'getOriginalValues')->name('originalValues');
         });
     });

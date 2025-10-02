@@ -54,10 +54,9 @@
                             <tr id="no-overrides-row">
                                 <td colspan="5" class="text-center py-4">
                                     <div class="empty-state">
-                                        <i class="fas fa-inbox text-muted mb-2" style="font-size: 2rem;"></i>
+                                        <i class="fas fa-inbox text-muted mb-2 empty-icon"></i>
                                         <p class="text-muted mb-0">No overrides found</p>
-                                        <p class="small text-muted">Click "Add" to create your first override
-                                        </p>
+                                        <p class="small text-muted">Click "Add" to create your first override</p>
                                     </div>
                                 </td>
                             </tr>
@@ -70,38 +69,49 @@
 
     <!-- Add Override Modal -->
     <div class="modal fade" id="add-override-modal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="fas fa-plus me-2"></i> Add Override
+                        <i class="fas fa-plus me-2"></i> Add Overrides
                     </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="add-override-form">
-                        <div class="mb-3">
-                            <label for="override-locale" class="form-label">Language</label>
-                            <select class="form-select" id="override-locale" name="locale">
-                                <option value="">Select Language</option>
-                                @foreach ($languages as $language)
-                                    <option value="{{ $language }}">{{ strtoupper($language) }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="override-key" class="form-label">Key</label>
-                            <select class="form-control" id="override-key" name="key"></select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="override-value" class="form-label">Value</label>
-                            <textarea class="form-control" id="override-value" name="value" rows="4" placeholder="Enter translation value"></textarea>
-                        </div>
-                    </form>
+                    <div class="mb-3">
+                        <label for="override-key-search" class="form-label">Search Translation Key</label>
+                        <select class="form-control" id="override-key-search"></select>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="modal-overrides-table">
+                            <thead>
+                                <tr>
+                                    <th>Key</th>
+
+                                    @foreach ($languages as $language)
+                                        <th class="text-center">{{ strtoupper($language) }}</th>
+                                    @endforeach
+                                    
+                                    <th class="text-center action-column">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modal-overrides-tbody">
+                                <tr id="modal-no-keys-row">
+                                    <td colspan="{{ count($languages) + 2 }}" class="text-center text-muted py-4">
+                                        Search and select keys above to add them here
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <input type="hidden" id="modal-languages-data" value="{{ json_encode(array_values($languages)) }}">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-success" id="save-override-btn">
-                        <i class="fas fa-save me-2"></i> Save
+                        <i class="fas fa-save me-2"></i> Save All
                     </button>
                 </div>
             </div>
