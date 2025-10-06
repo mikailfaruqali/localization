@@ -91,7 +91,7 @@ class LocalizationController
     public function getFiles()
     {
         return collect(File::files(sprintf('%s/%s', config('snawbar-localization.path'), config('snawbar-localization.base-locale'))))
-            ->reject(fn ($file) => in_array($file->getFilename(), config()->array('snawbar-localization.exclude')) || $this->hasMulti($file->getRealPath()))
+            ->reject(fn ($file) => in_array($file->getFilename(), config('snawbar-localization.exclude', [])) || $this->hasMulti($file->getRealPath()))
             ->map(fn ($file) => $file->getFilename())
             ->toArray();
     }
