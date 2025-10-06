@@ -2,9 +2,12 @@
 
 namespace Snawbar\Localization\Controllers;
 
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Validation\Rule;
+use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
+use Throwable;
 use ZipArchive;
 
 class LocalizationController
@@ -90,10 +93,16 @@ class LocalizationController
 
     public function getFiles()
     {
-        return collect(File::files(sprintf('%s/%s', config('snawbar-localization.path'), config('snawbar-localization.base-locale'))))
-            ->reject(fn ($file) => in_array($file->getFilename(), config('snawbar-localization.exclude', [])) || $this->hasMulti($file->getRealPath()))
-            ->map(fn ($file) => $file->getFilename())
-            ->toArray();
+        try {
+            return collect(File::files(sprintf('%s/%s', config('snawbar-localization.path'), config('snawbar-localization.base-locale'))))
+                ->reject(fn ($file) => in_array($file->getFilename(), config('snawbar-localization.exclude', [])) || $this->hasMulti($file->getRealPath()))
+                ->map(fn ($file) => $file->getFilename())
+                ->toArray();
+        } catch (Throwable $throwable) {
+            throw_if($throwable instanceof DirectoryNotFoundException, new Exception('Base Locale folder does not exist.', $throwable->getCode(), $throwable));
+
+            throw new Exception(sprintf('Snawbar Localization configuration not found ! or %s', $throwable->getMessage()), $throwable->getCode(), $throwable);
+        }
     }
 
     private function getMissingKeys($targetFiles = NULL)
