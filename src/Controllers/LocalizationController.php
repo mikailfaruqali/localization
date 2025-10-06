@@ -52,8 +52,8 @@ class LocalizationController
 
         foreach ($request->languages as $language) {
             File::put(
-                path: sprintf('%s/%s/%s', config('snawbar-localization.path'), $language, $request->file),
-                contents: $this->generatePhpFileContent($request->get($language))
+                sprintf('%s/%s/%s', config('snawbar-localization.path'), $language, $request->file),
+                $this->generatePhpFileContent($request->get($language))
             );
         }
 
@@ -99,7 +99,7 @@ class LocalizationController
     private function getMissingKeys($targetFiles = NULL)
     {
         $missingKeys = [];
-        $languages = $this->getLanguages(withoutBase: TRUE);
+        $languages = $this->getLanguages(TRUE);
         $files = $targetFiles ? (array) $targetFiles : $this->getFiles();
         $baseLocale = config('snawbar-localization.base-locale');
 
