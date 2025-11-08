@@ -38,7 +38,7 @@ class OverrideController extends Controller
     public function getOriginalValues(Request $request): JsonResponse
     {
         $request->validate([
-            'key' => 'required|string',
+            'key' => ['required', 'string'],
         ]);
 
         $key = $request->input('key');
@@ -52,14 +52,14 @@ class OverrideController extends Controller
     public function store(Request $request): JsonResponse
     {
         $request->validate([
-            'overrides' => 'required|array',
-            'overrides.*.key' => 'required|string',
-            'overrides.*.locale' => 'required|string',
-            'overrides.*.value' => 'required|string',
+            'overrides' => ['required', 'array'],
+            'overrides.*.key' => ['required', 'string'],
+            'overrides.*.locale' => ['required', 'string'],
+            'overrides.*.value' => ['required', 'string'],
         ]);
 
         $this->saveOverrides($request->overrides);
-        $this->clearCacheForLocales($this->extractLocales($request->overrides));
+        $this->clearCache();
 
         return response()->json([
             'success' => TRUE,
@@ -70,23 +70,19 @@ class OverrideController extends Controller
     public function update(Request $request): JsonResponse
     {
         $request->validate([
-            'value' => 'required|string',
+            'value' => ['required', 'string'],
         ]);
 
-        $override = $this->findOverride($request->id);
-
         $this->updateOverride($request->id, $request->value);
-        $this->clearCache($override->locale);
+        $this->clearCache();
 
         return response()->json(['success' => 'Successfully updated']);
     }
 
     public function destroy(Request $request): JsonResponse
     {
-        $override = $this->findOverride($request->id);
-
         $this->deleteOverride($request->id);
-        $this->clearCache($override->locale);
+        $this->clearCache();
 
         return response()->json(['success' => 'Successfully deleted']);
     }
@@ -130,7 +126,7 @@ class OverrideController extends Controller
         return collect($content)
             ->filter(fn (string $value, string $key) => $this->matchesQuery($prefix, $key, $value, $query))
             ->map(fn (string $value, string $key) => $this->formatSearchResult($prefix, $key, $value))
-            ->toArray();
+            ->all();
     }
 
     private function loadFileContent(string $file): ?array
@@ -172,7 +168,7 @@ class OverrideController extends Controller
     {
         return collect($this->getLanguages())
             ->mapWithKeys(fn (string $locale) => [$locale => $this->getOriginalTranslation($key, $locale)])
-            ->toArray();
+            ->all();
     }
 
     private function getOriginalTranslation(string $key, string $locale): string
@@ -265,27 +261,9 @@ class OverrideController extends Controller
         ]));
     }
 
-    private function extractLocales(array $overrides): array
+    private function clearCache(): void
     {
-        return collect($overrides)
-            ->pluck('locale')
-            ->unique()
-            ->toArray();
-    }
-
-    private function clearCacheForLocales(array $locales): void
-    {
-        collect($locales)->each(fn (string $locale) => $this->clearCache($locale));
-    }
-
-    private function clearCache(string $locale): void
-    {
-        OverrideTranslations::clearCache($locale);
-    }
-
-    private function findOverride(int $id): ?object
-    {
-        return DB::table(self::TABLE)->find($id);
+        OverrideTranslations::clearCache();
     }
 
     private function updateOverride(int $id, string $value): void

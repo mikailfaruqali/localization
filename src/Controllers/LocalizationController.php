@@ -88,7 +88,7 @@ class LocalizationController
             ->when($withoutBase, fn ($collection) => $collection->reject(fn ($directory) => basename($directory) === config('snawbar-localization.base-locale')))
             ->sortByDesc(fn ($directory) => basename($directory) === config('snawbar-localization.base-locale'))
             ->map(fn ($directory) => basename($directory))
-            ->toArray();
+            ->all();
     }
 
     public function getFiles()
@@ -97,9 +97,9 @@ class LocalizationController
             return collect(File::files(sprintf('%s/%s', config('snawbar-localization.path'), config('snawbar-localization.base-locale'))))
                 ->reject(fn ($file) => in_array($file->getFilename(), config('snawbar-localization.exclude', [])) || $this->hasMulti($file->getRealPath()))
                 ->map(fn ($file) => $file->getFilename())
-                ->toArray();
+                ->all();
         } catch (Throwable $throwable) {
-            throw_if($throwable instanceof DirectoryNotFoundException, new Exception('Base Locale folder does not exist.', $throwable->getCode(), $throwable));
+            throw_if($throwable instanceof DirectoryNotFoundException, Exception::class, 'Base Locale folder does not exist.', $throwable->getCode(), $throwable);
 
             throw new Exception(sprintf('Snawbar Localization configuration not found ! or %s', $throwable->getMessage()), $throwable->getCode(), $throwable);
         }
