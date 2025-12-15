@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('override_translations', function (Blueprint $table) {
             $table->id();
-            $table->string('key')->index();
-            $table->string('locale', 2)->index();
+            $table->string('key');
+            $table->string('locale', 4);
             $table->text('value')->nullable();
             $table->unique(['key', 'locale']);
         });

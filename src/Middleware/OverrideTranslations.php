@@ -19,7 +19,10 @@ final class OverrideTranslations
 
     public static function clearCache(): void
     {
-        Cache::flush();
+        DB::table('override_translations')
+            ->pluck('locale')
+            ->unique()
+            ->each(fn ($locale) => Cache::forget($this->cacheKey($locale)));
     }
 
     public function handle(Request $request, Closure $next): Response
