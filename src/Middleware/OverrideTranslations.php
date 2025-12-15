@@ -22,7 +22,7 @@ final class OverrideTranslations
         DB::table('override_translations')
             ->pluck('locale')
             ->unique()
-            ->each(fn ($locale) => Cache::forget($this->cacheKey($locale)));
+            ->each(fn ($locale) => Cache::forget(sprintf(self::CACHE_PATTERN, $locale)));
     }
 
     public function handle(Request $request, Closure $next): Response
