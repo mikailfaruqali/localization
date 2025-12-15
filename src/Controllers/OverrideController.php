@@ -256,9 +256,7 @@ class OverrideController extends Controller
 
     private function saveOverrides(array $overrides): void
     {
-        collect($overrides)->each(fn (array $override) => DB::table(self::TABLE)->updateOrInsert(['key' => $override['key'], 'locale' => $override['locale']], [
-            'value' => $override['value'],
-        ]));
+        DB::table(self::TABLE)->upsert($overrides, ['key', 'locale'], ['value']);
     }
 
     private function clearCache(): void
