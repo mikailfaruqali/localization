@@ -8,7 +8,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
-use Snawbar\Localization\Middleware\OverrideTranslations;
+use Snawbar\Localization\Services\TranslationCacheManager;
 
 class OverrideController extends Controller
 {
@@ -261,7 +261,7 @@ class OverrideController extends Controller
 
     private function clearCache(): void
     {
-        OverrideTranslations::clearCache();
+        TranslationCacheManager::clear();
     }
 
     private function updateOverride(int $id, string $value): void

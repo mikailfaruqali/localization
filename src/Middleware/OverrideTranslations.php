@@ -17,14 +17,6 @@ final class OverrideTranslations
 
     private const GLOBAL_NAMESPACE = '*';
 
-    public static function clearCache(): void
-    {
-        DB::table('override_translations')
-            ->pluck('locale')
-            ->unique()
-            ->each(fn ($locale) => Cache::forget(sprintf(self::CACHE_PATTERN, $locale)));
-    }
-
     public function handle(Request $request, Closure $next): Response
     {
         $locale = app()->getLocale();

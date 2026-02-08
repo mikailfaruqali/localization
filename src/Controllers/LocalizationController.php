@@ -49,11 +49,7 @@ class LocalizationController
 
     public function update(Request $request)
     {
-        $request->merge([
-            'languages' => json_decode($request->languages),
-        ]);
-
-        foreach ($request->languages as $language) {
+        foreach ($request->json('languages') as $language) {
             File::put(
                 sprintf('%s/%s/%s', config('snawbar-localization.path'), $language, $request->file),
                 $this->generatePhpFileContent($request->get($language))
