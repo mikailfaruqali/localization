@@ -66,7 +66,7 @@ class OverrideController extends Controller
         $this->clearCache();
 
         return response()->json([
-            'message' => sprintf('Successfully saved %d override(s)', count($validated['overrides'])),
+            'success' => sprintf('Successfully saved %d override(s)', count($validated['overrides'])),
         ]);
     }
 
@@ -80,7 +80,7 @@ class OverrideController extends Controller
         $this->updateOverride($validated['id'], $validated['value']);
         $this->clearCache();
 
-        return response()->json(['message' => 'Successfully updated']);
+        return response()->json(['success' => 'Successfully updated']);
     }
 
     public function destroy(Request $request): JsonResponse
@@ -92,7 +92,7 @@ class OverrideController extends Controller
         $this->deleteOverride($validated['id']);
         $this->clearCache();
 
-        return response()->json(['message' => 'Successfully deleted']);
+        return response()->json(['success' => 'Successfully deleted']);
     }
 
     private function getAllOverrides(): Collection
@@ -150,9 +150,12 @@ class OverrideController extends Controller
         return is_array($content) ? $content : NULL;
     }
 
-    private function matchesQuery(string $prefix, string $key, string $value, string $query): bool
+    private function matchesQuery(string $prefix, string $key, mixed $value, string $query): bool
     {
-        return Str::contains([sprintf('%s.%s', $prefix, $key), $value], $query, ignoreCase: TRUE);
+        $fullKey = sprintf('%s.%s', $prefix, $key);
+
+        return Str::contains($fullKey, $query, ignoreCase: TRUE)
+            || Str::contains((string) $value, $query, ignoreCase: TRUE);
     }
 
     private function formatSearchResult(string $prefix, string $key, string $value): array
