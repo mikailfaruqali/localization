@@ -11,35 +11,28 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class OverrideTranslations
 {
-    private const CACHE_PATTERN = 'override_translations.%s';
+    private const string CACHE_PATTERN = 'override_translations.%s';
 
-    private const GROUP_SEPARATOR = '.';
+    private const string GROUP_SEPARATOR = '.';
 
-    private const GLOBAL_NAMESPACE = '*';
+    private const string GLOBAL_NAMESPACE = '*';
 
     public function handle(Request $request, Closure $next): Response
     {
         $locale = app()->getLocale();
         $overrides = $this->getOverrides($locale);
 
-        if (blank($overrides)) {
-            return $next($request);
+        if (filled($overrides)) {
+            $this->applyOverrides($overrides, $locale);
         }
 
-        $this->applyOverrides($overrides, $locale);
-
         return $next($request);
-    }
-
-    private function cacheKey(string $locale): string
-    {
-        return sprintf(self::CACHE_PATTERN, $locale);
     }
 
     private function getOverrides(string $locale): array
     {
         return Cache::rememberForever(
-            $this->cacheKey($locale),
+            sprintf(self::CACHE_PATTERN, $locale),
             fn () => DB::table('override_translations')
                 ->where('locale', $locale)
                 ->pluck('value', 'key')
@@ -49,7 +42,7 @@ final class OverrideTranslations
 
     private function applyOverrides(array $overrides, string $locale): void
     {
-        $translator = app(Translator::class);
+        $translator = resolve(Translator::class);
 
         foreach ($this->extractGroups($overrides) as $group) {
             $translator->load(self::GLOBAL_NAMESPACE, $group, $locale);
@@ -60,8 +53,11 @@ final class OverrideTranslations
 
     private function extractGroups(array $overrides): array
     {
-        return array_values(array_unique(
-            array_map(fn ($key) => strtok($key, self::GROUP_SEPARATOR), array_keys($overrides))
-        ));
+        return collect($overrides)
+            ->keys()
+            ->map(fn ($key) => strtok($key, self::GROUP_SEPARATOR))
+            ->unique()
+            ->values()
+            ->all();
     }
 }

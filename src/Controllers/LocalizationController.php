@@ -4,9 +4,11 @@ namespace Snawbar\Localization\Controllers;
 
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Illuminate\Validation\Rule;
 use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 use ZipArchive;
 
@@ -16,13 +18,13 @@ class LocalizationController
     {
         $files = $this->getFiles();
         $missingKeys = $this->getMissingKeys($files);
-        $sortedFiles = $this->sortFilesByProblems($files, $missingKeys);
         $fileStatuses = $this->getFileStatuses($files, $missingKeys);
+        $sortedFiles = $this->sortFilesByProblems($files, $missingKeys);
 
         return view('snawbar-localization::file-selector', [
+            'fileStatuses' => $fileStatuses,
             'missingKeys' => $missingKeys,
             'files' => $sortedFiles,
-            'fileStatuses' => $fileStatuses,
         ]);
     }
 
@@ -36,7 +38,7 @@ class LocalizationController
         $contents = $this->getFilesContent($this->getLanguages(), $file);
         $baseKeys = $this->getBaseKeys($contents);
         $missing = $this->getMissingKeys($file)[$file] ?? [];
-        $missingcount = array_sum(array_map('count', $missing));
+        $missingcount = array_sum(array_map(count(...), $missing));
 
         return view('snawbar-localization::editor', [
             'baseKeys' => $baseKeys,
@@ -51,7 +53,7 @@ class LocalizationController
     {
         foreach ($request->json('languages') as $language) {
             File::put(
-                sprintf('%s/%s/%s', config('snawbar-localization.path'), $language, $request->file),
+                sprintf('%s/%s/%s', config()->string('snawbar-localization.path'), $language, $request->file),
                 $this->generatePhpFileContent($request->get($language))
             );
         }
@@ -61,43 +63,59 @@ class LocalizationController
         ]);
     }
 
-    public function downloadLang()
+    public function downloadLang(): BinaryFileResponse
     {
         $zipArchive = new ZipArchive;
         $zipFile = storage_path('lang-files.zip');
-        $langPath = config('snawbar-localization.path');
+        $langPath = config()->string('snawbar-localization.path');
 
-        if ($zipArchive->open($zipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE)) {
-            foreach (File::allFiles($langPath) as $file) {
-                $zipArchive->addFile($file->getRealPath(), $file->getRelativePathname());
-            }
+        $zipArchive->open($zipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE);
 
-            $zipArchive->close();
+        foreach (File::allFiles($langPath) as $file) {
+            $zipArchive->addFile($file->getRealPath(), $file->getRelativePathname());
         }
+
+        $zipArchive->close();
 
         return response()->download($zipFile)->deleteFileAfterSend(TRUE);
     }
 
-    public function getLanguages($withoutBase = FALSE)
+    public function getLanguages(bool $withoutBase = FALSE): array
     {
-        return collect(File::directories(config('snawbar-localization.path')))
-            ->when($withoutBase, fn ($collection) => $collection->reject(fn ($directory) => basename($directory) === config('snawbar-localization.base-locale')))
-            ->sortByDesc(fn ($directory) => basename($directory) === config('snawbar-localization.base-locale'))
-            ->map(fn ($directory) => basename($directory))
+        $basePath = config()->string('snawbar-localization.path');
+        $baseLocale = config()->string('snawbar-localization.base-locale');
+
+        return collect(File::directories($basePath))
+            ->map(fn ($directory) => basename((string) $directory))
+            ->when($withoutBase, fn ($collection) => $collection->reject(fn ($lang) => $lang === $baseLocale))
+            ->sortByDesc(fn ($lang) => $lang === $baseLocale)
+            ->values()
             ->all();
     }
 
-    public function getFiles()
+    public function getFiles(): array
     {
         try {
-            return collect(File::files(sprintf('%s/%s', config('snawbar-localization.path'), config('snawbar-localization.base-locale'))))
-                ->reject(fn ($file) => in_array($file->getFilename(), config('snawbar-localization.exclude', [])) || $this->hasMulti($file->getRealPath()))
-                ->map(fn ($file) => $file->getFilename())
-                ->all();
-        } catch (Throwable $throwable) {
-            throw_if($throwable instanceof DirectoryNotFoundException, Exception::class, 'Base Locale folder does not exist.', $throwable->getCode(), $throwable);
+            $basePath = sprintf('%s/%s',
+                config()->string('snawbar-localization.path'),
+                config()->string('snawbar-localization.base-locale')
+            );
 
-            throw new Exception(sprintf('Snawbar Localization configuration not found ! or %s', $throwable->getMessage()), $throwable->getCode(), $throwable);
+            $excludedFiles = config()->array('snawbar-localization.exclude');
+
+            return collect(File::files($basePath))
+                ->reject(fn ($file) => in_array($file->getFilename(), $excludedFiles) || $this->hasMulti($file->getRealPath()))
+                ->map(fn ($file) => $file->getFilename())
+                ->values()
+                ->all();
+        } catch (DirectoryNotFoundException $exception) {
+            throw new Exception('Base Locale folder does not exist.', $exception->getCode(), $exception);
+        } catch (Throwable $exception) {
+            throw new Exception(
+                sprintf('Snawbar Localization configuration error: %s', $exception->getMessage()),
+                $exception->getCode(),
+                $exception
+            );
         }
     }
 
@@ -106,7 +124,7 @@ class LocalizationController
         $missingKeys = [];
         $languages = $this->getLanguages(TRUE);
         $files = $targetFiles ? (array) $targetFiles : $this->getFiles();
-        $baseLocale = config('snawbar-localization.base-locale');
+        $baseLocale = config()->string('snawbar-localization.base-locale');
 
         foreach ($files as $file) {
             $fileContents = $this->getFilesContent([$baseLocale, ...$languages], $file);
@@ -117,11 +135,8 @@ class LocalizationController
 
                 $missingByKey = array_diff_key($baseContent, $languageContent);
 
-                $blankByKey = array_filter(
-                    $languageContent,
-                    fn ($languageValue) => blank($languageValue)
-                );
-                $blankByKey = array_intersect_key($baseContent, $blankByKey);
+                $blankValues = array_filter($languageContent, blank(...));
+                $blankByKey = array_intersect_key($baseContent, $blankValues);
 
                 if ($missingByKey || $blankByKey) {
                     $missingKeys[$file][$language] = $missingByKey + $blankByKey;
@@ -134,31 +149,21 @@ class LocalizationController
 
     private function sortFilesByProblems(array $files, array $missingKeys)
     {
-        $filesWithProblems = [];
-        $filesWithoutProblems = [];
-
-        foreach ($files as $file) {
-            if (isset($missingKeys[$file])) {
-                $filesWithProblems[] = $file;
-            } else {
-                $filesWithoutProblems[] = $file;
-            }
-        }
-
-        return array_merge($filesWithProblems, $filesWithoutProblems);
+        return collect($files)
+            ->sortBy(fn ($file) => ! isset($missingKeys[$file]))
+            ->values()
+            ->all();
     }
 
-    private function getFileStatuses(array $files, array $missingKeys)
+    private function getFileStatuses(array $files, array $missingKeys): array
     {
         $statuses = [];
 
         foreach ($files as $file) {
-            if (isset($missingKeys[$file])) {
-                $totalMissing = array_sum(array_map('count', $missingKeys[$file]));
-                $statuses[$file] = sprintf('%d missing keys', $totalMissing);
-            } else {
-                $statuses[$file] = 'All complete';
-            }
+            $statuses[$file] = match (isset($missingKeys[$file])) {
+                TRUE => sprintf('%d missing keys', array_sum(array_map(count(...), $missingKeys[$file]))),
+                FALSE => 'All complete',
+            };
         }
 
         return $statuses;
@@ -169,24 +174,22 @@ class LocalizationController
         return tap($data = include $filePath) && (! is_array($data) || collect($data)->contains(fn ($value) => is_array($value)));
     }
 
-    private function getFilesContent(array $languages, string $file)
+    private function getFilesContent(array $languages, string $file): Collection
     {
-        return collect(array_merge(...array_map(fn ($lang) => [$lang => include sprintf('%s/%s/%s', config('snawbar-localization.path'), $lang, $file)], $languages)));
+        $basePath = config()->string('snawbar-localization.path');
+
+        return collect($languages)->mapWithKeys(
+            fn ($language) => [$language => include sprintf('%s/%s/%s', $basePath, $language, $file)]
+        );
     }
 
     private function getBaseKeys($selectedLanguageContents)
     {
-        return array_keys($selectedLanguageContents->get(config('snawbar-localization.base-locale')));
+        return array_keys($selectedLanguageContents->get(config()->string('snawbar-localization.base-locale')));
     }
 
     private function generatePhpFileContent(array $content): string
     {
-        $lines = array_map(
-            fn ($key, $value) => sprintf('    "%s" => "%s",', $key, $value),
-            array_keys($content),
-            $content
-        );
-
-        return "<?php\n\nreturn [\n" . implode("\n", $lines) . "\n];\n";
+        return sprintf("<?php\n\nreturn %s;\n", var_export($content, TRUE));
     }
 }

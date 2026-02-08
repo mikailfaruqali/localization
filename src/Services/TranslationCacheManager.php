@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 class TranslationCacheManager
 {
-    private const CACHE_PATTERN = 'override_translations.%s';
+    private const string CACHE_PATTERN = 'override_translations.%s';
 
     private static array $callbacks = [];
 

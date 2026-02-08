@@ -7,14 +7,19 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Snawbar\Localization\Services\TranslationCacheManager;
 
 class OverrideController extends Controller
 {
-    private const MIN_SEARCH_LENGTH = 2;
+    private const int MIN_SEARCH_LENGTH = 2;
 
-    private const TABLE = 'override_translations';
+    private const string TABLE = 'override_translations';
+
+    public function __construct(
+        private readonly LocalizationController $localizationController
+    ) {}
 
     public function index(): View
     {
@@ -28,11 +33,12 @@ class OverrideController extends Controller
     {
         $query = $request->input('query', '');
 
-        if (strlen($query) >= self::MIN_SEARCH_LENGTH) {
-            return response()->json($this->searchTranslations($query));
-        }
+        $results = match (strlen((string) $query) >= self::MIN_SEARCH_LENGTH) {
+            TRUE => $this->searchTranslations($query),
+            FALSE => [],
+        };
 
-        return response()->json([]);
+        return response()->json($results);
     }
 
     public function getOriginalValues(Request $request): JsonResponse
@@ -41,50 +47,52 @@ class OverrideController extends Controller
             'key' => ['required', 'string'],
         ]);
 
-        $key = $request->input('key');
-
         return response()->json([
-            'key' => $key,
-            'values' => $this->fetchOriginalTranslations($key),
+            'key' => $request->input('key'),
+            'values' => $this->fetchOriginalTranslations($request->input('key')),
         ]);
     }
 
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'overrides' => ['required', 'array'],
             'overrides.*.key' => ['required', 'string'],
             'overrides.*.locale' => ['required', 'string'],
             'overrides.*.value' => ['required', 'string'],
         ]);
 
-        $this->saveOverrides($request->overrides);
+        $this->saveOverrides($validated['overrides']);
         $this->clearCache();
 
         return response()->json([
-            'success' => TRUE,
-            'message' => sprintf('Successfully saved %d override(s)', $this->count($request->overrides)),
+            'message' => sprintf('Successfully saved %d override(s)', count($validated['overrides'])),
         ]);
     }
 
     public function update(Request $request): JsonResponse
     {
-        $request->validate([
+        $validated = $request->validate([
+            'id' => ['required', 'integer'],
             'value' => ['required', 'string'],
         ]);
 
-        $this->updateOverride($request->id, $request->value);
+        $this->updateOverride($validated['id'], $validated['value']);
         $this->clearCache();
 
-        return response()->json(['success' => 'Successfully updated']);
+        return response()->json(['message' => 'Successfully updated']);
     }
 
     public function destroy(Request $request): JsonResponse
     {
-        $this->deleteOverride($request->id);
+        $validated = $request->validate([
+            'id' => ['required', 'integer'],
+        ]);
+
+        $this->deleteOverride($validated['id']);
         $this->clearCache();
 
-        return response()->json(['success' => 'Successfully deleted']);
+        return response()->json(['message' => 'Successfully deleted']);
     }
 
     private function getAllOverrides(): Collection
@@ -94,7 +102,7 @@ class OverrideController extends Controller
 
     private function getLanguages(): array
     {
-        return app(LocalizationController::class)->getLanguages();
+        return $this->localizationController->getLanguages();
     }
 
     private function searchTranslations(string $query): array
@@ -107,14 +115,14 @@ class OverrideController extends Controller
 
     private function getTranslationFiles(): array
     {
-        return app(LocalizationController::class)->getFiles();
+        return $this->localizationController->getFiles();
     }
 
     private function searchInFile(string $file, string $query): array
     {
         $content = $this->loadFileContent($file);
 
-        if ($content === NULL) {
+        if (blank($content)) {
             return [];
         }
 
@@ -131,26 +139,20 @@ class OverrideController extends Controller
 
     private function loadFileContent(string $file): ?array
     {
-        $path = $this->buildPath(config('snawbar-localization.path'), config('snawbar-localization.base-locale'), $file);
+        $path = sprintf('%s/%s/%s',
+            config()->string('snawbar-localization.path'),
+            config()->string('snawbar-localization.base-locale'),
+            $file
+        );
 
         $content = @include $path;
 
-        if (is_array($content)) {
-            return $content;
-        }
-
-        return NULL;
-    }
-
-    private function buildPath(string $base, string $locale, string $file): string
-    {
-        return sprintf('%s/%s/%s', $base, $locale, $file);
+        return is_array($content) ? $content : NULL;
     }
 
     private function matchesQuery(string $prefix, string $key, string $value, string $query): bool
     {
-        return strpos(strtolower(sprintf('%s.%s', $prefix, $key)), strtolower($query)) !== FALSE
-            || strpos(strtolower($value), strtolower($query)) !== FALSE;
+        return Str::contains([sprintf('%s.%s', $prefix, $key), $value], $query, ignoreCase: TRUE);
     }
 
     private function formatSearchResult(string $prefix, string $key, string $value): array
@@ -175,7 +177,7 @@ class OverrideController extends Controller
     {
         $parts = $this->parseTranslationKey($key);
 
-        if ($parts === NULL) {
+        if (blank($parts)) {
             return '';
         }
 
@@ -186,72 +188,47 @@ class OverrideController extends Controller
     {
         $content = $this->loadLocaleFile($parts['file'], $locale);
 
-        if ($content === NULL) {
+        if (blank($content)) {
             return '';
         }
 
-        return $this->extractNestedValue($content, $parts['nested_key']);
+        $value = data_get($content, $parts['nested_key']);
+
+        return is_string($value) ? $value : '';
     }
 
     private function parseTranslationKey(string $key): ?array
     {
-        $parts = explode('.', $key);
+        [$file, $nestedKey] = Str::of($key)->explode('.', 2);
 
-        if (count($parts) >= 2) {
-            return [
-                'file' => array_shift($parts),
-                'nested_key' => implode('.', $parts),
-            ];
-        }
-
-        return NULL;
+        return match ((bool) $nestedKey) {
+            TRUE => ['file' => $file, 'nested_key' => $nestedKey],
+            FALSE => NULL,
+        };
     }
 
     private function loadLocaleFile(string $file, string $locale): ?array
     {
-        $path = $this->buildLocalePath(config('snawbar-localization.path'), $locale, $file);
+        $path = sprintf('%s/%s/%s.php',
+            config()->string('snawbar-localization.path'),
+            $locale,
+            $file
+        );
 
-        if (! file_exists($path)) {
-            return NULL;
-        }
-
-        return $this->includeFile($path);
-    }
-
-    private function buildLocalePath(string $base, string $locale, string $file): string
-    {
-        return sprintf('%s/%s/%s.php', $base, $locale, $file);
+        return match (file_exists($path)) {
+            TRUE => $this->includeFile($path),
+            FALSE => NULL,
+        };
     }
 
     private function includeFile(string $path): ?array
     {
         $content = @include $path;
 
-        if (is_array($content)) {
-            return $content;
-        }
-
-        return NULL;
-    }
-
-    private function extractNestedValue(array $content, string $nestedKey): string
-    {
-        $keys = explode('.', $nestedKey);
-        $value = $content;
-
-        foreach ($keys as $key) {
-            $value = $value[$key] ?? NULL;
-
-            if ($value === NULL) {
-                return '';
-            }
-        }
-
-        if (is_string($value)) {
-            return $value;
-        }
-
-        return '';
+        return match (is_array($content)) {
+            TRUE => $content,
+            FALSE => NULL,
+        };
     }
 
     private function saveOverrides(array $overrides): void
@@ -266,18 +243,11 @@ class OverrideController extends Controller
 
     private function updateOverride(int $id, string $value): void
     {
-        DB::table(self::TABLE)->updateOrInsert(['id' => $id], [
-            'value' => $value,
-        ]);
+        DB::table(self::TABLE)->updateOrInsert(['id' => $id], ['value' => $value]);
     }
 
     private function deleteOverride(int $id): void
     {
-        DB::table(self::TABLE)->where('id', '=', $id)->delete();
-    }
-
-    private function count(array $items): int
-    {
-        return count($items);
+        DB::table(self::TABLE)->where('id', $id)->delete();
     }
 }

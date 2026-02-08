@@ -18,8 +18,8 @@
         }
     ],
     "require": {
-        "php": "^7.4|^8.0",
-        "illuminate/contracts": ">=5.0"
+        "php": "^8.3",
+        "illuminate/contracts": ">=11.0"
     },
     "require-dev": {
         "laravel/pint": "^1.14",
@@ -29,10 +29,7 @@
     "autoload": {
         "psr-4": {
             "Snawbar\\Localization\\": "src/"
-        },
-        "files": [
-            "src/helpers.php"
-        ]
+        }
     },
     "extra": {
         "laravel": {

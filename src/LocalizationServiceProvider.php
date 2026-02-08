@@ -25,18 +25,10 @@ class LocalizationServiceProvider extends ServiceProvider
 
     private function publishAssets()
     {
-        if ($this->app->runningInConsole()) {
-            $this->publishes([
-                __DIR__ . '/../resources/assets' => public_path('vendor/snawbar-localization'),
-            ], 'snawbar-localization-assets');
-
-            $this->publishes([
-                __DIR__ . '/../config/localization.php' => config_path('snawbar-localization.php'),
-            ], 'snawbar-localization-config');
-
-            $this->publishes([
-                __DIR__ . '/../database/migrations/' => database_path('migrations'),
-            ], 'snawbar-localization-migrations');
-        }
+        $this->publishes([
+            __DIR__ . '/../database/migrations/' => database_path('migrations'),
+            __DIR__ . '/../resources/assets' => public_path('vendor/snawbar-localization'),
+            __DIR__ . '/../config/localization.php' => config_path('snawbar-localization.php'),
+        ], 'snawbar-localization');
     }
 }
